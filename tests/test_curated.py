@@ -111,3 +111,17 @@ def test_extra_field_row_is_reported_not_crashing(curated_copy):
     _rewrite(p, p.read_text() + "HR_X,2026-01-01,s,https://a,n,extra\n")
     errors = check_tables(curated_copy)
     assert any("deadlines.csv" in e and "wrong number of fields" in e for e in errors)
+
+
+def test_ojeu_cited_requires_ojeu_date(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text().replace(",false,,https://standards", ",true,,https://standards"))
+    errors = check_tables(curated_copy)
+    assert any("standards.csv:2" in e and "ojeu_cited" in e and "ojeu_date" in e for e in errors)
+
+
+def test_ojeu_date_requires_ojeu_cited(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text().replace(",false,,https://standards", ",false,2027-01-01,https://standards"))
+    errors = check_tables(curated_copy)
+    assert any("standards.csv:2" in e and "ojeu_date" in e and "ojeu_cited" in e for e in errors)

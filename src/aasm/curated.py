@@ -68,6 +68,11 @@ def _check_one(curated_dir: Path, table: Table, errors: list[str]) -> Rows | Non
         for col in table.bools:
             if row[col] not in BOOLS:
                 errors.append(f"{fname}:{i}: {col} must be true or false, got {row[col]!r}")
+        if table.name == "standards":
+            if row["ojeu_cited"] == "true" and not row["ojeu_date"]:
+                errors.append(f"{fname}:{i}: ojeu_cited is true but ojeu_date is empty")
+            if row["ojeu_cited"] == "false" and row["ojeu_date"]:
+                errors.append(f"{fname}:{i}: ojeu_date is set but ojeu_cited is false")
         for (tname, col), allowed in ENUMS.items():
             if tname == table.name and row[col] not in allowed:
                 errors.append(f"{fname}:{i}: {col} {row[col]!r} not in {sorted(allowed)}")
