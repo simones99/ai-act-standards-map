@@ -11,6 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 
@@ -74,6 +75,10 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
         try:
             resp = get(s["source_url"], timeout=60)
             resp.raise_for_status()
+            final_url = getattr(resp, "url", None) or s["source_url"]
+            old_host, new_host = urlparse(s["source_url"]).netloc, urlparse(final_url).netloc
+            if old_host != new_host:
+                raise RuntimeError(f"host changed: {old_host} -> {new_host}")
             fp = fingerprint(resp.text)
         except Exception as exc:  # noqa: BLE001 - one bad page must not stop the others
             result.failed.append(wi)

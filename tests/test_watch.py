@@ -31,8 +31,10 @@ def test_append_history_adds_only_changed_stages(tmp_path):
 
 
 class Resp:
-    def __init__(self, text, status=200):
+    def __init__(self, text, status=200, url=None):
         self.text, self.status_code = text, status
+        if url is not None:
+            self.url = url
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -71,3 +73,11 @@ def test_open_issue_calls_gh(tmp_path):
     calls = []
     open_issue("Title", "Body", run=lambda cmd, check: calls.append(cmd))
     assert calls[0][:3] == ["gh", "issue", "create"] and "--title" in calls[0] and "Title" in calls[0]
+
+
+def test_run_marks_changed_host_as_failed(curated_ok, tmp_path):
+    notes = []
+    res = run(curated_ok, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
+              get=lambda url, timeout: Resp(PAGE, 200, url="https://example.org/moved"), notify=notes.append)
+    assert res.failed == ["prEN 1"] and res.changed == []
+    assert len(notes) == 1 and "host changed" in notes[0][1]
