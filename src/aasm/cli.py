@@ -3,23 +3,36 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from aasm import __version__
+from aasm.curated import check_tables
+
+DEFAULT_CURATED = Path("data/curated")
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="aasm", description="AI Act standards map")
     p.add_argument("--version", action="store_true", help="print the version and exit")
-    p.add_subparsers(dest="cmd")
+    sub = p.add_subparsers(dest="cmd")
+    chk = sub.add_parser("check", help="validate the curated tables")
+    chk.add_argument("--curated", type=Path, default=DEFAULT_CURATED)
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
     if args.version:
         print(f"aasm {__version__}")
         return 0
-    build_parser().print_help()
+    if args.cmd == "check":
+        errors = check_tables(args.curated)
+        for e in errors:
+            print(e)
+        print(f"{len(errors)} problem(s)" if errors else "curated tables OK")
+        return 1 if errors else 0
+    parser.print_help()
     return 2
 
 
