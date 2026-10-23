@@ -25,3 +25,13 @@ def test_results_are_dated():
     import re
     text = (ROOT / "docs" / "results.md").read_text()
     assert re.search(r"As of \d{4}-\d{2}-\d{2}", text)
+
+
+def test_methodology_points_to_the_l_series_for_citations():
+    text = (ROOT / "docs" / "methodology.md").read_text()
+    assert "L series" in text and "C series" not in text
+
+
+def test_no_document_claims_a_uni_catalogue_source():
+    for path in ("README.md", "docs/methodology.md", "site/templates/index.html.j2"):
+        assert "UNI" not in (ROOT / path).read_text().replace("UNIQUE", ""), path

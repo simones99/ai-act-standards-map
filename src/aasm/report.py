@@ -17,6 +17,8 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
     req, dlv, std = tables["requirements"], tables["request_deliverables"], tables["standards"]
     covered = sum(1 for c in coverage if c["status"] != "uncovered")
     noted = sum(1 for s in std if s["note"].strip())
+    judged = sum(1 for s in std if "judgement" in s["note"].lower())  # judgements say so in their note
+    first_seen = len({h["wi_ref"] for h in history})
     retrieved = [date.fromisoformat(s["retrieved_at"]) for s in std if s["retrieved_at"]]
     latest = max(retrieved).isoformat() if retrieved else "none"
     stale = sum(1 for d in retrieved if (today - d).days > STALE_DAYS)
@@ -39,13 +41,15 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
         f"at {today.isoformat()}.",
         "",
         "## Accuracy",
-        f"- Work-item rows carrying a curator's note (a judgement, not a fact): {noted} of {len(std)}.",
+        f"- Work-item rows whose link to a deliverable is a judgement: {judged} of {len(std)}; "
+        f"rows with other caveats: {noted - judged}. Each note says which.",
         "- Every row has a public `source_url`; no standard text is reproduced. "
         "The project describes, it does not interpret.",
         "",
         "## Timeliness",
         f"- Latest `retrieved_at` on work items: {latest}; rows older than {STALE_DAYS} days: {stale}.",
-        f"- Pages watched weekly: {len(std)}; stage changes recorded in history: {len(history)}.",
+        f"- Pages watched weekly: {len(std)}; stage changes observed: {len(history) - first_seen}; "
+        f"first observations: {first_seen}.",
         f"- Adoption data: {eurostat}.",
         "",
         "## Coherence",

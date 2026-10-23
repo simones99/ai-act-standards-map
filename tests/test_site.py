@@ -99,3 +99,13 @@ def test_timeline_draws_one_point_per_work_item_against_the_first_deadline():
 def test_timeline_colours_a_passed_target():
     scale = vega_specs([], [])["timeline"]["layer"][1]["encoding"]["color"]["scale"]
     assert "target_passed" in scale["domain"] and len(scale["domain"]) == len(scale["range"])
+
+
+def test_coverage_shows_the_note_of_a_judged_mapping(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    p = root / "data" / "curated" / "request_deliverables.csv"
+    p.write_text(p.read_text().replace(",,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,Outside",
+                                       ",R10,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,Outside"))
+    build(root, tmp_path / "site", date(2026, 10, 1))
+    html = (tmp_path / "site" / "index.html").read_text()
+    assert "Article 10 (via D09): Outside the Articles 8-15 perimeter (Article 17)." in html

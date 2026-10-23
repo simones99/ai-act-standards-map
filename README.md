@@ -41,4 +41,4 @@ For a requirement at date `as_of`, consider the deliverables that cover it and t
 
 ## Licences
 
-Code: [MIT](LICENSE). Data: [CC BY 4.0](data/LICENSE). Eurostat data: Source: Eurostat. Standards metadata are facts taken from public CEN-CENELEC and UNI catalogue pages; no standard text is reproduced. Personal project; it does not represent any employer.
+Code: [MIT](LICENSE). Data: [CC BY 4.0](data/LICENSE). Eurostat data: Source: Eurostat. Standards metadata are facts taken from public CEN-CENELEC pages; no standard text is reproduced. Personal project; it does not represent any employer.

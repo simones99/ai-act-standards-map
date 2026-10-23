@@ -6,8 +6,8 @@
 |---|---|---|
 | Regulation (EU) 2024/1689, EUR-Lex, as amended by Regulation (EU) 2026/1744 (Digital Omnibus on AI) | Requirements of Articles 8–15, Annex III areas, application dates (Article 113) | Hand-curated; article and paragraph on every row |
 | Commission Implementing Decision C(2025) 3871, standardisation request M/593 (Commission documents register) | The ten deliverables, their due date and the requirements they answer | Hand-curated. C(2025) 3871 repealed and replaced C(2023) 3215 with the same deliverables and a new due date (31 August 2025 instead of 30 April 2025) |
-| CEN-CENELEC JTC 21 work programme; UNI public catalogue | Work items: reference, title, stage code, dates | Hand-curated from public pages; pages fingerprinted weekly |
-| Official Journal of the EU, C series | Harmonised standards cited under the AI Act | Hand-curated when a citation appears |
+| CEN-CENELEC JTC 21 work programme and work item pages | Work items: reference, title, stage code, dates | Hand-curated from public pages; pages fingerprinted weekly |
+| Official Journal of the EU, L series (Commission implementing decisions publishing references of harmonised standards under Article 40) | Harmonised standards cited under the AI Act | Hand-curated when a citation appears |
 | Eurostat `isoc_eb_ain2` | Share of enterprises (10+ employees) using at least one AI technology, by NACE sector, country, year | API with lineage (URL, time, SHA-256, rows) |
 
 ## Stage codes

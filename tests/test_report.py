@@ -39,3 +39,25 @@ def test_pages_watched_counts_curated_work_items_not_state(curated_ok):
     state = {"prEN 1": {}, "gone 9": {}, "gone 8": {}}
     note = quality_note(tables, None, [], history=[], state=state, today=date(2026, 10, 1))
     assert "Pages watched weekly: 1;" in note
+
+
+def _with_notes(tables, notes):
+    base = tables["standards"][0]
+    tables["standards"] = [dict(base, wi_ref=f"prEN {i}", note=n) for i, n in enumerate(notes, 1)]
+    return tables
+
+
+def test_quality_note_counts_only_notes_that_record_a_judgement(curated_ok):
+    notes = ["Linked to D01 by judgement.", "Forecasted voting date has passed.", ""]
+    tables = _with_notes(load_all(curated_ok), notes)
+    note = quality_note(tables, None, [], history=[], state={}, today=date(2026, 10, 1))
+    assert "link to a deliverable is a judgement: 1 of 3" in note
+    assert "other caveats: 1" in note
+
+
+def test_quality_note_separates_first_observations_from_stage_changes(curated_ok):
+    history = [{"wi_ref": "prEN 1", "stage_code": "40", "observed_at": "2026-10-01"},
+               {"wi_ref": "prEN 1", "stage_code": "50", "observed_at": "2026-10-08"},
+               {"wi_ref": "prEN 2", "stage_code": "20", "observed_at": "2026-10-01"}]
+    note = quality_note(load_all(curated_ok), None, [], history=history, state={}, today=date(2026, 10, 8))
+    assert "stage changes observed: 1; first observations: 2" in note

@@ -38,6 +38,9 @@
 {% endfor %}
 </tbody>
 </table>
+{% for n in coverage_notes %}
+<p class="meta">Article {{ n.article }} (via {{ n.deliverable_id }}): {{ n.note }}</p>
+{% endfor %}
 
 <h2>Work items against the application dates</h2>
 <div id="timeline" class="chart"></div>
@@ -59,7 +62,7 @@
 </ul>
 
 <footer>
-<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC and UNI catalogue pages; no standard text is reproduced. This is a personal project and does not represent any employer.</p>
+<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC pages; no standard text is reproduced. This is a personal project and does not represent any employer.</p>
 </footer>
 </main>
 <script>

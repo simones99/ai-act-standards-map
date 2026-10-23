@@ -72,6 +72,11 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
     derived, curated, fetched = data / "derived", data / "curated", data / "fetched"
     coverage = _read_csv(derived / "coverage_by_requirement.csv")
     timeline = _read_csv(derived / "timeline.csv")
+    deliverables = _read_csv(curated / "request_deliverables.csv")
+    # A judged mapping must be visible where the status is shown, not only in the CSV
+    coverage_notes = [{"article": r["article"], "deliverable_id": d["deliverable_id"], "note": d["note"]}
+                      for r in coverage for d in deliverables
+                      if d.get("note") and r["req_id"] in d.get("covers_req_ids", "").split("|")]
     lin_path = fetched / "lineage.json"
     lineage = json.loads(lin_path.read_text()) if lin_path.exists() else None
 
@@ -93,7 +98,8 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
 
     env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=True)
     page = env.get_template("index.html.j2").render(
-        today=today.isoformat(), version=__version__, coverage=coverage, timeline=timeline,
+        today=today.isoformat(), version=__version__, coverage=coverage, coverage_notes=coverage_notes,
+        timeline=timeline,
         curated_files=curated_files, lineage=lineage, repo_url=REPO_URL,
         specs=vega_specs(coverage, timeline),
     )
