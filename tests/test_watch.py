@@ -3,7 +3,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from aasm.watch import append_history, fingerprint, open_issue, run
+from aasm.watch import append_history, fingerprint, names_work_item, open_issue, run
 
 PAGE = (Path(__file__).parent / "fixtures" / "page_a.html").read_text()
 
@@ -125,3 +125,11 @@ def test_notify_failure_is_printed_to_stderr(curated_ok, tmp_path, capsys):
     run(curated_ok, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
         get=lambda url, timeout: Resp(APEX_ERROR), notify=boom)
     assert "gh failed: missing label" in capsys.readouterr().err
+
+
+def test_names_work_item_needs_the_whole_reference():
+    assert not names_work_item("<p>prEN 18229-10 Robustness</p>", "prEN 18229-1")
+    assert not names_work_item("<p>Seen 1 time</p>", "prEN 1")
+    assert names_work_item("<p>prEN 18229-1 Logging</p>", "prEN 18229-1")
+    assert names_work_item("<p>EN 18229-1:2027 Logging</p>", "prEN 18229-1")
+    assert names_work_item("<p>EN 18286:2026</p>", "EN 18286:2026")

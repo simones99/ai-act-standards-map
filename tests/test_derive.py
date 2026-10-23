@@ -114,3 +114,11 @@ def test_timeline_marks_a_passed_target_of_an_unpublished_item():
     rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 10, 23))}
     assert rows["A"]["late_vs_deadline"] == "target_passed" and rows["A"]["days_target_to_deadline"] == ""
     assert rows["P"]["late_vs_deadline"] == "false" and rows["P"]["days_target_to_deadline"] == 11
+
+
+def test_timeline_gives_unknown_for_a_withdrawn_item():
+    s = [std("W", "D01", "95", "2026-01-01", target="2026-07-29"),
+         std("V", "D01", "95", "2026-01-01", target="2027-07-29")]
+    rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 10, 23))}
+    assert rows["W"]["late_vs_deadline"] == "unknown" and rows["W"]["days_target_to_deadline"] == ""
+    assert rows["V"]["late_vs_deadline"] == "unknown" and rows["V"]["days_target_to_deadline"] == ""

@@ -28,7 +28,7 @@ Article 11 (technical documentation) has no deliverable of its own. Annex II of 
 
 ## Timeline
 
-For each work item and each application date in `deadlines.csv`: `days_target_to_deadline = deadline_date - target_pub_date`; negative means the target publication falls after the deadline (`late_vs_deadline = true`). No target date gives `unknown`. A target date already past at `as_of` for a work item not yet published (stage below 60) gives `target_passed` with no day count: the forecast went by without a vote, so it says nothing about lateness.
+For each work item and each application date in `deadlines.csv`: `days_target_to_deadline = deadline_date - target_pub_date`; negative means the target publication falls after the deadline (`late_vs_deadline = true`). No target date, or a withdrawn work item (stage 95), gives `unknown`. A target date already past at `as_of` for a work item not yet published (stage below 60) gives `target_passed` with no day count: the forecast went by without a vote, so it says nothing about lateness.
 
 ## Work items
 

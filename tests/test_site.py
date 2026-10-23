@@ -109,3 +109,8 @@ def test_coverage_shows_the_note_of_a_judged_mapping(tmp_path, curated_ok):
     build(root, tmp_path / "site", date(2026, 10, 1))
     html = (tmp_path / "site" / "index.html").read_text()
     assert "Article 10 (via D09): Outside the Articles 8-15 perimeter (Article 17)." in html
+
+
+def test_timeline_axis_shows_the_year():
+    x = vega_specs([], [])["timeline"]["layer"][1]["encoding"]["x"]
+    assert x["axis"]["format"] == "%b %Y"

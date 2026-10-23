@@ -58,7 +58,7 @@ def timeline(tables: dict[str, Rows], as_of: date) -> list[dict]:
         target = _d(s["target_pub_date"])
         for dl in tables["deadlines"]:
             dl_date = date.fromisoformat(dl["date"])
-            if target is None:
+            if target is None or s["stage_code"] == "95":  # no target, or withdrawn
                 days, late = "", "unknown"
             elif target < as_of and int(s["stage_code"]) < 60:
                 days, late = "", "target_passed"  # the forecast date went by without publication

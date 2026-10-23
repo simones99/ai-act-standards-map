@@ -38,7 +38,8 @@ def fingerprint(page: str) -> str:
 def names_work_item(page: str, wi_ref: str) -> bool:
     """An error page served with 200 does not name the work item. "prEN 1" also matches "EN 1:2027"."""
     core = _DRAFT_PREFIX.sub("", wi_ref).split(":")[0].lower()
-    return core in visible_text(page)
+    # whole reference only: "EN 18229-1" must not match "EN 18229-10"; an optional pr/Fpr prefix is allowed
+    return re.search(r"(?<![\w-])(?:f?pr)?" + re.escape(core) + r"(?![\w-])", visible_text(page)) is not None
 
 
 def append_history(history_path: Path, standards: list[dict], today: date) -> int:

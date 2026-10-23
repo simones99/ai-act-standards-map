@@ -41,3 +41,23 @@ def test_standards_have_a_recent_retrieved_at():
     from datetime import date
     for s in load_table(REAL, "standards"):
         assert date.fromisoformat(s["retrieved_at"]) >= date(2026, 10, 1), s["wi_ref"]
+
+
+def test_deliverables_follow_c_2025_3871():
+    for d in load_table(REAL, "request_deliverables"):
+        assert (d["request_ref"], d["due_date"]) == ("C(2025) 3871", "2025-08-31"), d["deliverable_id"]
+
+
+def test_deadlines_are_those_in_force_after_the_digital_omnibus():
+    dates = {d["deadline_id"]: d["date"] for d in load_table(REAL, "deadlines")}
+    assert dates == {"HR_ANNEX3": "2027-12-02", "HR_ANNEX1": "2028-08-02"}
+
+
+def test_article_11_is_mapped_to_the_quality_management_deliverable():
+    d09 = next(d for d in load_table(REAL, "request_deliverables") if d["deliverable_id"] == "D09")
+    assert "R11" in d09["covers_req_ids"].split("|")
+
+
+def test_en_18286_is_recorded_as_cited():
+    en = next(s for s in load_table(REAL, "standards") if s["wi_ref"] == "EN 18286:2026")
+    assert (en["ojeu_cited"], en["ojeu_date"]) == ("true", "2026-10-14")

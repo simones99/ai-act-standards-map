@@ -53,7 +53,8 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
             {"mark": {"type": "point", "filled": True, "size": 90},
              "transform": [{"filter": {"field": "deadline_id", "equal": first}}],
              "encoding": {
-                 "x": {"field": "target_pub_date", "type": "temporal", "title": "Target publication"},
+                 "x": {"field": "target_pub_date", "type": "temporal", "title": "Target publication",
+                       "axis": {"format": "%b %Y"}},
                  "y": {"field": "wi_ref", "type": "nominal", "title": None},
                  "color": {"field": "late_vs_deadline", "type": "nominal", "title": f"Late vs {first}",
                            "scale": {"domain": ["false", "true", "target_passed", "unknown"],
