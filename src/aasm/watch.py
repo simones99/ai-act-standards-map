@@ -70,6 +70,7 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
     standards = load_table(curated_dir, "standards")
     state: dict = json.loads(state_path.read_text()) if state_path.exists() else {}
     result = WatchResult()
+    previous: dict[str, dict] = {}
     for s in standards:
         wi = s["wi_ref"]
         try:
@@ -86,21 +87,30 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
             continue
         if wi in state and state[wi]["sha256"] != fp:
             result.changed.append(wi)
+            previous[wi] = state[wi]
         state[wi] = {"sha256": fp, "checked_at": today.isoformat(), "url": s["source_url"]}
-    state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    fetch_failed = list(result.failed)
     result.appended = append_history(history_path, standards, today)
     for wi in result.changed:
         s = next(x for x in standards if x["wi_ref"] == wi)
-        notify((f"Check {wi}: its public page changed ({today.isoformat()})",
-                f"The page behind `{wi}` changed since the last check.\n\nURL: {s['source_url']}\n"
-                f"Recorded stage: {s['stage_code']} ({s['stage_date']}).\n\n"
-                "Open the page, update `data/curated/standards.csv` if the stage or dates moved, "
-                "and close this issue."))
-    if result.failed:
+        try:
+            notify((f"Check {wi}: its public page changed ({today.isoformat()})",
+                    f"The page behind `{wi}` changed since the last check.\n\nURL: {s['source_url']}\n"
+                    f"Recorded stage: {s['stage_code']} ({s['stage_date']}).\n\n"
+                    "Open the page, update `data/curated/standards.csv` if the stage or dates moved, "
+                    "and close this issue."))
+        except Exception:  # noqa: BLE001 - keep the old fingerprint so the change is re-detected next run
+            result.failed.append(wi)
+            state[wi] = previous[wi]
+    if fetch_failed:
         lines = "\n".join(f"- `{wi}`: {next(x for x in standards if x['wi_ref'] == wi).get('_error', '')}"
-                          for wi in result.failed)
-        notify((f"watch-standards: {len(result.failed)} page(s) failed ({today.isoformat()})",
-                f"These pages could not be fetched:\n\n{lines}\n\n"
-                "Check the URLs in `data/curated/standards.csv`."))
+                          for wi in fetch_failed)
+        try:
+            notify((f"watch-standards: {len(fetch_failed)} page(s) failed ({today.isoformat()})",
+                    f"These pages could not be fetched:\n\n{lines}\n\n"
+                    "Check the URLs in `data/curated/standards.csv`."))
+        except Exception:  # noqa: BLE001 - the pages are already in result.failed
+            pass
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result

@@ -81,3 +81,18 @@ def test_run_marks_changed_host_as_failed(curated_ok, tmp_path):
               get=lambda url, timeout: Resp(PAGE, 200, url="https://example.org/moved"), notify=notes.append)
     assert res.failed == ["prEN 1"] and res.changed == []
     assert len(notes) == 1 and "host changed" in notes[0][1]
+
+
+def test_notify_failure_is_reported_and_state_for_that_page_is_not_saved(curated_ok, tmp_path):
+    state, hist = tmp_path / "state.json", tmp_path / "hist.csv"
+    run(curated_ok, state, hist, date(2026, 10, 1),
+        get=lambda url, timeout: Resp(PAGE), notify=lambda i: None)
+    old = json.loads(state.read_text())["prEN 1"]
+
+    def boom(item):
+        raise RuntimeError("gh failed")
+
+    res = run(curated_ok, state, hist, date(2026, 10, 8),
+              get=lambda url, timeout: Resp(PAGE.replace("40.20", "50.20")), notify=boom)
+    assert res.changed == ["prEN 1"] and "prEN 1" in res.failed
+    assert json.loads(state.read_text())["prEN 1"] == old
