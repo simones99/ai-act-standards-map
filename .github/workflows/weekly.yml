@@ -62,7 +62,7 @@ jobs:
     if: ${{ needs.update.outputs.watch == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "watch-standards reported failed pages; see the needs-review issue" && exit 1
+      - run: echo "watch-standards reported failed pages; see the needs-review issue, or the update job log if no issue exists" && exit 1
 
   publish:
     needs: update

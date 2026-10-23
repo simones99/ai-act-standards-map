@@ -21,5 +21,5 @@ jobs:
       - run: ruff check .
       - run: pytest -q
       - run: aasm check
-      - run: aasm derive --out /tmp/derived
-      - run: aasm build --out /tmp/site
+      - run: aasm derive
+      - run: aasm build

@@ -26,7 +26,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e . -r requirements-dev.txt
 aasm check                 # validate the curated tables
 aasm fetch-eurostat        # adoption data with lineage (or --from-file for offline)
-aasm watch-standards       # fingerprint the public pages; open a review issue on change
+aasm watch-standards --no-issues  # fingerprint the public pages (CI opens review issues)
 aasm derive                # coverage_by_requirement.csv, timeline.csv
 aasm report                # docs/quality.md
 aasm build                 # _site/index.html
