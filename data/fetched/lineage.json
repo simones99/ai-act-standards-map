@@ -1,7 +1,7 @@
 {
   "table": "isoc_eb_ain2",
   "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/isoc_eb_ain2?format=JSON&lang=EN&size_emp=GE10&indic_is=E_AI_TANY&unit=PC_ENT&geo=EU27_2020&geo=AT&geo=BE&geo=BG&geo=CY&geo=CZ&geo=DE&geo=DK&geo=EE&geo=EL&geo=ES&geo=FI&geo=FR&geo=HR&geo=HU&geo=IE&geo=IT&geo=LT&geo=LU&geo=LV&geo=MT&geo=NL&geo=PL&geo=PT&geo=RO&geo=SE&geo=SI&geo=SK",
-  "retrieved_at": "2026-10-23T13:18:15Z",
+  "retrieved_at": "2026-10-23T16:48:26Z",
   "sha256": "64a8f0adb4fdfab0fa0cb4058d6772c7feb2580dda252efcdf7cc41a3d8f4578",
   "bytes": 77043,
   "rows": 5574,
