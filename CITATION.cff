@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this dataset, please cite it as below."
+title: "ai-act-standards-map: AI Act high-risk requirements against harmonised standards"
+authors:
+  - family-names: Mezzabotta
+    given-names: Simone
+version: 0.1.0
+date-released: 2026-12-31
+license: CC-BY-4.0
+repository-code: "https://github.com/simones99/ai-act-standards-map"
