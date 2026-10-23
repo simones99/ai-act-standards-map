@@ -24,7 +24,7 @@ For each requirement `req_id` at a date `as_of`:
 
 A requirement with no deliverable (Article 8, the umbrella clause) is `uncovered` with `n_deliverables = 0`, which the site shows as such.
 
-Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. The status of Article 11 therefore follows the quality management work items. When it reads `harmonised`, it means that the standard the request names as the main carrier of Article 11 is cited in the Official Journal; how far that standard covers Article 11 is stated in its Annex ZA, which is not public.
+Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. The status of Article 11 therefore follows the quality management work items. When it reads `harmonised`, it means that a standard this project links to Article 11 is cited in the Official Journal. The implementing decision that cites it does not list which requirements it covers, and the presumption of conformity applies only to the extent that the standard covers them (Article 40(1)); this project has no public source on how far it covers Article 11.
 
 ## Timeline
 
