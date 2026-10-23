@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aasm"
+version = "0.1.0"
+description = "AI Act high-risk requirements against harmonised standards: a curated, documented dataset"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32,<3", "Jinja2>=3.1,<4"]
+
+[project.scripts]
+aasm = "aasm.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
