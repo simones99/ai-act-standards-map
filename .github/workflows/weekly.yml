@@ -66,7 +66,7 @@ jobs:
 
   publish:
     needs: update
-    if: ${{ !github.event.repository.private }}
+    if: ${{ vars.PUBLISH_PAGES == 'true' }}   # set the repo variable PUBLISH_PAGES=true when the repo goes public
     runs-on: ubuntu-latest
     environment:
       name: github-pages
