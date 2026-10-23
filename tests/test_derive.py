@@ -89,7 +89,7 @@ def test_as_of_is_written_on_every_row():
 def test_timeline_days_and_lateness():
     s = [std("A", "D01", "40", "2026-01-01", target="2026-06-01"),
          std("B", "D02", "50", "2026-01-01", target="2026-09-01")]
-    rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 10, 1))}
+    rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 5, 1))}
     assert rows["A"]["deadline_id"] == "HR" and rows["A"]["days_target_to_deadline"] == 62
     assert rows["A"]["late_vs_deadline"] == "false"
     assert rows["B"]["days_target_to_deadline"] == -30 and rows["B"]["late_vs_deadline"] == "true"
@@ -106,3 +106,11 @@ def test_withdrawn_stage_95_does_not_count_as_published_or_enquiry():
     rows = by_req(coverage_by_requirement(withdrawn, date(2026, 10, 1)))
     assert rows["R09"]["n_published"] == 0 and rows["R09"]["n_at_enquiry_or_later"] == 0
     assert rows["R09"]["status"] == "in_progress"
+
+
+def test_timeline_marks_a_passed_target_of_an_unpublished_item():
+    s = [std("A", "D01", "50", "2026-01-01", target="2026-07-29"),
+         std("P", "D01", "60", "2026-07-22", target="2026-07-22")]
+    rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 10, 23))}
+    assert rows["A"]["late_vs_deadline"] == "target_passed" and rows["A"]["days_target_to_deadline"] == ""
+    assert rows["P"]["late_vs_deadline"] == "false" and rows["P"]["days_target_to_deadline"] == 11

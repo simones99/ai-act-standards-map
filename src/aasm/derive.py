@@ -60,6 +60,8 @@ def timeline(tables: dict[str, Rows], as_of: date) -> list[dict]:
             dl_date = date.fromisoformat(dl["date"])
             if target is None:
                 days, late = "", "unknown"
+            elif target < as_of and int(s["stage_code"]) < 60:
+                days, late = "", "target_passed"  # the forecast date went by without publication
             else:
                 days = (dl_date - target).days
                 late = "true" if days < 0 else "false"

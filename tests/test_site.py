@@ -94,3 +94,8 @@ def test_timeline_draws_one_point_per_work_item_against_the_first_deadline():
     points = vega_specs([], tl)["timeline"]["layer"][1]
     assert points["transform"] == [{"filter": {"field": "deadline_id", "equal": "HR_ANNEX3"}}]
     assert "HR_ANNEX3" in points["encoding"]["color"]["title"]
+
+
+def test_timeline_colours_a_passed_target():
+    scale = vega_specs([], [])["timeline"]["layer"][1]["encoding"]["color"]["scale"]
+    assert "target_passed" in scale["domain"] and len(scale["domain"]) == len(scale["range"])

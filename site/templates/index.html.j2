@@ -45,7 +45,7 @@
 <thead><tr><th>Work item</th><th>Title</th><th>Deliverable</th><th>Stage</th><th>Target publication</th><th>Deadline</th><th>Days to deadline</th></tr></thead>
 <tbody>
 {% for t in timeline %}
-<tr><td>{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td>{{ t.target_pub_date or '—' }}</td><td>{{ t.deadline_id }} ({{ t.deadline_date }})</td><td>{{ t.days_target_to_deadline if t.days_target_to_deadline != '' else 'unknown' }}</td></tr>
+<tr><td>{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td>{{ t.target_pub_date or '—' }}</td><td>{{ t.deadline_id }} ({{ t.deadline_date }})</td><td>{{ t.days_target_to_deadline if t.days_target_to_deadline != '' else ('target date passed' if t.late_vs_deadline == 'target_passed' else 'unknown') }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
