@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Act standards map</title>
+<meta name="description" content="Which AI Act high-risk requirements are covered by harmonised standards, and when.">
+<script src="https://cdn.jsdelivr.net/npm/vega@5.30.0" integrity="sha384-em7CHpJd+SsMugVFf6TY7AKQcLWMcbPhD84hmNK8o6WFDkK+2uHSUQRVQV1/w827" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0" integrity="sha384-GhkD6ks9/zgY1m5EFOUZWz/vMVMUFF/92DL61RZc+B42J8osL+jNufKv68bNHHZ2" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0" integrity="sha384-TqXb8su49m5OnEpKGO8m+VrgHesrUxyP22HgpXi4hnh1Hm43dXroiSYemNf5D8lv" crossorigin="anonymous"></script>
+<style>
+  :root { --ink:#1b1b1b; --muted:#5b5b5b; --line:#d9d9d9; --bg:#ffffff; --accent:#1f4e79; }
+  body { margin:0; font:16px/1.5 system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.8rem; margin: 0 0 4px; } h2 { font-size: 1.25rem; margin-top: 40px; }
+  .meta, footer { color: var(--muted); font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .status-uncovered { color:#9b1c1c; } .status-in_progress { color:#8a5a00; }
+  .status-published { color:#1f4e79; } .status-harmonised { color:#1e6b3a; }
+  .chart { margin: 12px 0 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+<h1>AI Act standards map</h1>
+<p class="meta">Coverage of the high-risk requirements (Articles 8–15 of Regulation (EU) 2024/1689) by the harmonised standards requested from CEN-CENELEC JTC 21. As of {{ today }}. Version {{ version }}.</p>
+<p>The project <strong>describes, it does not interpret</strong>: every row cites a public source by article and paragraph, and judgements are marked as such in a <code>note</code> column. Only public sources are used.</p>
+
+<h2>Coverage by requirement</h2>
+<div id="coverage" class="chart"></div>
+<table>
+<thead><tr><th>Article</th><th>Requirement</th><th>Deliverables</th><th>Work items</th><th>At enquiry or later</th><th>Published</th><th>Cited in OJEU</th><th>Status</th></tr></thead>
+<tbody>
+{% for r in coverage %}
+<tr><td>{{ r.article }}</td><td>{{ r.title }}</td><td>{{ r.n_deliverables }}</td><td>{{ r.n_work_items }}</td><td>{{ r.n_at_enquiry_or_later }}</td><td>{{ r.n_published }}</td><td>{{ r.n_harmonised }}</td><td class="status-{{ r.status }}">{{ r.status.replace('_',' ') }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Work items against the application dates</h2>
+<div id="timeline" class="chart"></div>
+<table>
+<thead><tr><th>Work item</th><th>Title</th><th>Deliverable</th><th>Stage</th><th>Target publication</th><th>Deadline</th><th>Days to deadline</th></tr></thead>
+<tbody>
+{% for t in timeline %}
+<tr><td>{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td>{{ t.target_pub_date or '—' }}</td><td>{{ t.deadline_id }} ({{ t.deadline_date }})</td><td>{{ t.days_target_to_deadline if t.days_target_to_deadline != '' else 'unknown' }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Data and method</h2>
+<ul>
+  <li>Curated tables: {% for name in curated_files %}<a href="data/{{ name }}">{{ name }}</a>{{ ", " if not loop.last }}{% endfor %}</li>
+  <li>Derived tables: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>, <a href="data/standards_history.csv">standards_history.csv</a></li>
+  <li>Adoption data: <a href="data/adoption.csv">adoption.csv</a>{% if lineage %} ({{ lineage.rows }} rows, retrieved {{ lineage.retrieved_at }}, SHA-256 {{ lineage.sha256[:12] }}…). Source: Eurostat, <code>isoc_eb_ain2</code>{% endif %}</li>
+  <li><a href="quality.md">Quality note</a> · <a href="{{ repo_url }}/blob/main/docs/methodology.md">Methodology</a> · <a href="{{ repo_url }}">Repository</a></li>
+</ul>
+
+<footer>
+<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC and UNI catalogue pages; no standard text is reproduced. This is a personal project and does not represent any employer.</p>
+</footer>
+</main>
+<script>
+  vegaEmbed("#coverage", {{ specs.coverage | tojson }}, {actions: false});
+  vegaEmbed("#timeline", {{ specs.timeline | tojson }}, {actions: false});
+</script>
+</body>
+</html>

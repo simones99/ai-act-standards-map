@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 from aasm import __version__
@@ -43,3 +44,19 @@ def test_watch_standards_exit_code_is_1_on_failure(curated_copy, tmp_path, monke
     args = ["watch-standards", "--curated", str(curated_copy), "--state", str(tmp_path / "s.json"),
             "--history", str(tmp_path / "h.csv")]
     assert main(args) == 1
+
+
+def test_build_writes_site(tmp_path, curated_ok):
+    root = tmp_path / "repo"
+    shutil.copytree(curated_ok, root / "data" / "curated")
+    derived = root / "data" / "derived"
+    derived.mkdir(parents=True)
+    (derived / "coverage_by_requirement.csv").write_text(
+        "req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,status\n"
+        "R09,9,Risk management system,2026-10-01,1,1,1,0,0,in_progress\n")
+    (derived / "timeline.csv").write_text(
+        "wi_ref,title,deliverable_id,stage_code,stage_name,stage_date,target_pub_date,deadline_id,deadline_date,"
+        "days_target_to_deadline,late_vs_deadline\n")
+    out = tmp_path / "site_out"
+    assert main(["build", "--root", str(root), "--out", str(out)]) == 0
+    assert (out / "index.html").exists()

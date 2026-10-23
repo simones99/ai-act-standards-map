@@ -32,6 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
     ws.add_argument("--no-issues", action="store_true", help="print notifications instead of opening issues")
     rp = sub.add_parser("report", help="write docs/quality.md")
     rp.add_argument("--root", type=Path, default=Path("."))
+    bd = sub.add_parser("build", help="render the static site into _site/")
+    bd.add_argument("--root", type=Path, default=Path("."))
+    bd.add_argument("--out", type=Path, default=Path("_site"))
     return p
 
 
@@ -75,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
         from aasm.report import write as write_report
 
         print(f"wrote {write_report(args.root, date.today())}")
+        return 0
+    if args.cmd == "build":
+        from aasm.site import build
+
+        print(f"site written to {build(args.root, args.out, date.today())}")
         return 0
     parser.print_help()
     return 2
