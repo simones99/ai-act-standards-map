@@ -26,7 +26,7 @@ Article 11 has no deliverable of its own in C(2025) 3871; the 1 shown is D09 (qu
 - This dataset holds 11 JTC 21 work items under M/613 that expect an OJEU citation: 10 linked to Articles 9–15 and prEN 18285 (conformity assessment, outside Articles 8–15). On the work programme they stand at: 1 published (stage 60), 4 under approval (50), 1 under enquiry (40), 5 under drafting (20).
 - Of the seven requirements with at least one work item, Article 13 is the only one with none at enquiry or later. Its only work item, prEN 18229-2, has been under drafting since 2026-01-06.
 
-### One harmonised standard
+### One harmonised standard cited in the Official Journal (in this dataset)
 
 - EN 18286:2026, *Artificial intelligence – Quality management system for EU AI Act regulatory purposes*, has had a date of availability of 2026-07-22 on the CEN-CENELEC work programme. Its reference was published in the Official Journal by Commission Implementing Decision (EU) 2026/2274 of 12 October 2026 (OJ L, 2026/2274, 14.10.2026), in force from that day. Recital 3 of the Decision states that the standard corresponds to point 9 of Annex I to C(2025) 3871 (quality management systems for providers of AI systems, including post-market monitoring processes).
 - It is the only work item in this dataset cited in the Official Journal.
