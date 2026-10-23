@@ -39,6 +39,8 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
                         {"field": "n_work_items", "title": "Work items"}],
         },
     }
+    # One point per work item: colour against the earliest deadline; every deadline is still drawn as a rule.
+    first = min(timeline, key=lambda r: r["deadline_date"])["deadline_id"] if timeline else ""
     timeline_spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Target publication of each work item against the application dates",
@@ -49,10 +51,11 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
             {"mark": {"type": "rule", "strokeDash": [4, 4], "color": "#9b1c1c"},
              "encoding": {"x": {"field": "deadline_date", "type": "temporal"}}},
             {"mark": {"type": "point", "filled": True, "size": 90},
+             "transform": [{"filter": {"field": "deadline_id", "equal": first}}],
              "encoding": {
                  "x": {"field": "target_pub_date", "type": "temporal", "title": "Target publication"},
                  "y": {"field": "wi_ref", "type": "nominal", "title": None},
-                 "color": {"field": "late_vs_deadline", "type": "nominal", "title": "Late vs deadline",
+                 "color": {"field": "late_vs_deadline", "type": "nominal", "title": f"Late vs {first}",
                            "scale": {"domain": ["false", "true", "unknown"],
                                      "range": ["#1e6b3a", "#9b1c1c", "#888888"]}},
                  "tooltip": [{"field": "wi_ref"}, {"field": "stage_name", "title": "Stage"},

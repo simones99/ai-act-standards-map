@@ -79,3 +79,18 @@ def test_csv_text_is_html_escaped(tmp_path, curated_ok):
 def test_coverage_article_is_sorted_numerically():
     specs = vega_specs([], [])
     assert specs["coverage"]["data"]["format"] == {"parse": {"article": "number"}}
+
+
+def test_chart_containers_take_the_page_width(tmp_path, curated_ok):
+    # vega-embed makes the container inline-block; with width "container" it collapses to 0 px
+    build(_root(tmp_path, curated_ok), tmp_path / "site", date(2026, 10, 1))
+    html = (tmp_path / "site" / "index.html").read_text()
+    assert ".chart { width: 100%;" in html
+
+
+def test_timeline_draws_one_point_per_work_item_against_the_first_deadline():
+    tl = [{"wi_ref": "prEN 1", "deadline_id": "HR_ANNEX1", "deadline_date": "2028-08-02"},
+          {"wi_ref": "prEN 1", "deadline_id": "HR_ANNEX3", "deadline_date": "2027-12-02"}]
+    points = vega_specs([], tl)["timeline"]["layer"][1]
+    assert points["transform"] == [{"filter": {"field": "deadline_id", "equal": "HR_ANNEX3"}}]
+    assert "HR_ANNEX3" in points["encoding"]["color"]["title"]
