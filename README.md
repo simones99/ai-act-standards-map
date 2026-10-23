@@ -2,7 +2,7 @@
 
 Which high-risk requirements of the EU AI Act are covered by harmonised standards, when, and which sectors of the economy are most exposed to the gap. A curated, documented dataset with weekly checks and a one-page site.
 
-**Perimeter.** High-risk AI systems (Article 6 and Annex III) and the requirements of Articles 8–15 of Regulation (EU) 2024/1689, against the deliverables of standardisation request M/593 (Commission Implementing Decision C(2023) 3215) and the CEN-CENELEC JTC 21 work items that answer them. Out of scope in v0.1: general-purpose AI models, prohibited practices, Annex I products. Sector exposure (Eurostat adoption data against Annex III areas) is fetched now and analysed in v0.2.
+**Perimeter.** High-risk AI systems (Article 6 and Annex III) and the requirements of Articles 8–15 of Regulation (EU) 2024/1689, against the deliverables of standardisation request M/593 (Commission Implementing Decision C(2025) 3871, which replaced C(2023) 3215) and the CEN-CENELEC JTC 21 work items that answer them. Out of scope in v0.1: general-purpose AI models, prohibited practices, Annex I products. Sector exposure (Eurostat adoption data against Annex III areas) is fetched now and analysed in v0.2.
 
 ## Two rules
 
