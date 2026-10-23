@@ -96,3 +96,32 @@ def test_notify_failure_is_reported_and_state_for_that_page_is_not_saved(curated
               get=lambda url, timeout: Resp(PAGE.replace("40.20", "50.20")), notify=boom)
     assert res.changed == ["prEN 1"] and "prEN 1" in res.failed
     assert json.loads(state.read_text())["prEN 1"] == old
+
+
+APEX_ERROR = ("<html><body><h1>Sorry, this page isn't available</h1><p>Session state protection violation: "
+              "This may be caused by manual alteration of a URL containing a checksum.</p></body></html>")
+
+
+def test_run_marks_a_page_that_does_not_name_the_work_item_as_failed(curated_ok, tmp_path):
+    notes = []
+    res = run(curated_ok, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
+              get=lambda url, timeout: Resp(APEX_ERROR), notify=notes.append)
+    assert res.failed == ["prEN 1"] and res.changed == []
+    assert not (tmp_path / "s.json").exists() or "prEN 1" not in json.loads((tmp_path / "s.json").read_text())
+    assert len(notes) == 1 and "does not name" in notes[0][1]
+
+
+def test_run_accepts_the_page_once_the_draft_is_published(curated_ok, tmp_path):
+    published = PAGE.replace("prEN 1", "EN 1:2027")
+    res = run(curated_ok, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
+              get=lambda url, timeout: Resp(published), notify=lambda i: None)
+    assert res.failed == []
+
+
+def test_notify_failure_is_printed_to_stderr(curated_ok, tmp_path, capsys):
+    def boom(item):
+        raise RuntimeError("gh failed: missing label")
+
+    run(curated_ok, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
+        get=lambda url, timeout: Resp(APEX_ERROR), notify=boom)
+    assert "gh failed: missing label" in capsys.readouterr().err

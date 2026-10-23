@@ -7,6 +7,7 @@ import html
 import json
 import re
 import subprocess
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
@@ -21,13 +22,23 @@ HISTORY_COLUMNS = ("wi_ref", "stage_code", "observed_at")
 _SCRIPT_STYLE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
 _TAGS = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
+_DRAFT_PREFIX = re.compile(r"^f?pr", re.I)
+
+
+def visible_text(page: str) -> str:
+    text = _SCRIPT_STYLE.sub(" ", page)
+    text = html.unescape(_TAGS.sub(" ", text))
+    return _WS.sub(" ", text).strip().lower()
 
 
 def fingerprint(page: str) -> str:
-    text = _SCRIPT_STYLE.sub(" ", page)
-    text = html.unescape(_TAGS.sub(" ", text))
-    text = _WS.sub(" ", text).strip().lower()
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return hashlib.sha256(visible_text(page).encode("utf-8")).hexdigest()
+
+
+def names_work_item(page: str, wi_ref: str) -> bool:
+    """An error page served with 200 does not name the work item. "prEN 1" also matches "EN 1:2027"."""
+    core = _DRAFT_PREFIX.sub("", wi_ref).split(":")[0].lower()
+    return core in visible_text(page)
 
 
 def append_history(history_path: Path, standards: list[dict], today: date) -> int:
@@ -80,6 +91,8 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
             old_host, new_host = urlparse(s["source_url"]).netloc, urlparse(final_url).netloc
             if old_host != new_host:
                 raise RuntimeError(f"host changed: {old_host} -> {new_host}")
+            if not names_work_item(resp.text, wi):
+                raise RuntimeError(f"page does not name {wi}")
             fp = fingerprint(resp.text)
         except Exception as exc:  # noqa: BLE001 - one bad page must not stop the others
             result.failed.append(wi)
@@ -99,7 +112,8 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
                     f"Recorded stage: {s['stage_code']} ({s['stage_date']}).\n\n"
                     "Open the page, update `data/curated/standards.csv` if the stage or dates moved, "
                     "and close this issue."))
-        except Exception:  # noqa: BLE001 - keep the old fingerprint so the change is re-detected next run
+        except Exception as exc:  # noqa: BLE001 - keep the old fingerprint so the change is re-detected next run
+            print(f"watch-standards: notification for {wi} failed: {exc}", file=sys.stderr)
             result.failed.append(wi)
             state[wi] = previous[wi]
     if fetch_failed:
@@ -109,8 +123,8 @@ def run(curated_dir: Path, state_path: Path, history_path: Path, today: date,
             notify((f"watch-standards: {len(fetch_failed)} page(s) failed ({today.isoformat()})",
                     f"These pages could not be fetched:\n\n{lines}\n\n"
                     "Check the URLs in `data/curated/standards.csv`."))
-        except Exception:  # noqa: BLE001 - the pages are already in result.failed
-            pass
+        except Exception as exc:  # noqa: BLE001 - the pages are already in result.failed
+            print(f"watch-standards: failure notification failed: {exc}", file=sys.stderr)
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
