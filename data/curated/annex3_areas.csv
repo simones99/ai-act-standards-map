@@ -1,0 +1,9 @@
+area_id,name,points,source_url
+1,Biometrics,"1(a);1(b);1(c)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+2,Critical infrastructure,2,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+3,Education and vocational training,"3(a);3(b);3(c);3(d)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+4,"Employment, workers' management and access to self-employment","4(a);4(b)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+5,Access to and enjoyment of essential private services and essential public services and benefits,"5(a);5(b);5(c);5(d)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+6,Law enforcement,"6(a);6(b);6(c);6(d);6(e)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+7,"Migration, asylum and border control management","7(a);7(b);7(c);7(d)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+8,Administration of justice and democratic processes,"8(a);8(b)",https://eur-lex.europa.eu/eli/reg/2024/1689/oj

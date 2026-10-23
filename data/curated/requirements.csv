@@ -1,0 +1,9 @@
+req_id,article,paragraph,title,summary,source_url
+R08,8,,Compliance with the requirements,High-risk AI systems shall comply with the requirements of Section 2 taking account of intended purpose and the state of the art.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R09,9,,Risk management system,A continuous iterative risk management system shall be established and maintained throughout the lifecycle of the system.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R10,10,,Data and data governance,Training validation and testing data sets shall meet quality criteria and be subject to data governance practices.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R11,11,,Technical documentation,Technical documentation shall be drawn up before placing on the market and kept up to date.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R12,12,,Record-keeping,The system shall technically allow the automatic recording of events (logs) over its lifetime.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R13,13,,Transparency and provision of information to deployers,The system shall be designed so that its operation is sufficiently transparent and accompanied by instructions for use.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R14,14,,Human oversight,The system shall be designed so that natural persons can effectively oversee it while in use.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+R15,15,,"Accuracy, robustness and cybersecurity",The system shall achieve appropriate levels of accuracy robustness and cybersecurity and perform consistently throughout its lifecycle.,https://eur-lex.europa.eu/eli/reg/2024/1689/oj

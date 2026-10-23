@@ -1,0 +1,11 @@
+deliverable_id,title,request_ref,due_date,covers_req_ids,source_url,note
+D01,Risk management systems for AI systems,C(2025) 3871,2025-08-31,R09,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D02,Governance and quality of datasets used to build AI systems,C(2025) 3871,2025-08-31,R10,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D03,Record keeping through logging capabilities by AI systems,C(2025) 3871,2025-08-31,R12,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D04,Transparency and information provisions for users of AI systems,C(2025) 3871,2025-08-31,R13,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D05,Human oversight of AI systems,C(2025) 3871,2025-08-31,R14,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D06,Accuracy specifications for AI systems,C(2025) 3871,2025-08-31,R15,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D07,Robustness specifications for AI systems,C(2025) 3871,2025-08-31,R15,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D08,Cybersecurity specifications for AI systems,C(2025) 3871,2025-08-31,R15,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,
+D09,"Quality management systems for providers of AI systems, including post-market monitoring processes",C(2025) 3871,2025-08-31,R11,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,"Main subject (Article 17) is outside the Articles 8-15 perimeter. Mapped to Article 11: Annex II of C(2025) 3871 asks for Article 11 to be covered by other standards, particularly on the quality management system."
+D10,Conformity assessment for AI systems,C(2025) 3871,2025-08-31,,https://ec.europa.eu/transparency/documents-register/detail?ref=C(2025)3871&lang=en,Outside the Articles 8-15 perimeter (Article 43). Kept for completeness of the request.
