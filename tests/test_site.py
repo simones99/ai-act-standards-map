@@ -74,3 +74,8 @@ def test_csv_text_is_html_escaped(tmp_path, curated_ok):
     html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
     assert "A&lt;b&gt;&amp;" in html
     assert "A<b>" not in html
+
+
+def test_coverage_article_is_sorted_numerically():
+    specs = vega_specs([], [])
+    assert specs["coverage"]["data"]["format"] == {"parse": {"article": "number"}}

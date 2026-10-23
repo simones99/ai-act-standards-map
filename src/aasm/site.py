@@ -26,7 +26,7 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
     coverage_spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Coverage status of each requirement",
-        "data": {"values": coverage},
+        "data": {"values": coverage, "format": {"parse": {"article": "number"}}},
         "mark": "bar",
         "height": {"step": 26},
         "width": "container",

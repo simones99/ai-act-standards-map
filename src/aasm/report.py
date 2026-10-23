@@ -45,7 +45,7 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
         "",
         "## Timeliness",
         f"- Latest `retrieved_at` on work items: {latest}; rows older than {STALE_DAYS} days: {stale}.",
-        f"- Pages watched weekly: {len(state)}; stage changes recorded in history: {len(history)}.",
+        f"- Pages watched weekly: {len(std)}; stage changes recorded in history: {len(history)}.",
         f"- Adoption data: {eurostat}.",
         "",
         "## Coherence",

@@ -33,8 +33,8 @@ def coverage_by_requirement(tables: dict[str, Rows], as_of: date) -> list[dict]:
     for r in tables["requirements"]:
         dlv = set(deliverables_by_req.get(r["req_id"], []))
         items = [s for s in reached if s["deliverable_id"] in dlv]
-        n_enq = sum(1 for s in items if int(s["stage_code"]) >= 40)
-        n_pub = sum(1 for s in items if int(s["stage_code"]) >= 60)
+        n_enq = sum(1 for s in items if 40 <= int(s["stage_code"]) < 95)
+        n_pub = sum(1 for s in items if 60 <= int(s["stage_code"]) < 95)
         n_harm = sum(1 for s in items
                      if s["ojeu_cited"] == "true" and (_d(s["ojeu_date"]) or date.max) <= as_of)
         if n_harm:

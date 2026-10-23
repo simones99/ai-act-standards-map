@@ -99,3 +99,10 @@ def test_timeline_days_and_lateness():
 def test_timeline_without_target_date_leaves_days_empty():
     rows = timeline(tables([std("A", "D01", "20", "2026-01-01")]), date(2026, 10, 1))
     assert rows[0]["days_target_to_deadline"] == "" and rows[0]["late_vs_deadline"] == "unknown"
+
+
+def test_withdrawn_stage_95_does_not_count_as_published_or_enquiry():
+    withdrawn = tables([std("prEN 1", "D01", "95", "2026-01-01")])
+    rows = by_req(coverage_by_requirement(withdrawn, date(2026, 10, 1)))
+    assert rows["R09"]["n_published"] == 0 and rows["R09"]["n_at_enquiry_or_later"] == 0
+    assert rows["R09"]["status"] == "in_progress"

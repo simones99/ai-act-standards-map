@@ -32,3 +32,10 @@ def test_quality_note_lists_deliverables_without_work_items(curated_ok):
     tables = load_all(curated_ok)
     note = quality_note(tables, None, [], history=[], state={}, today=date(2026, 10, 1))
     assert "D09" in note
+
+
+def test_pages_watched_counts_curated_work_items_not_state(curated_ok):
+    tables = load_all(curated_ok)
+    state = {"prEN 1": {}, "gone 9": {}, "gone 8": {}}
+    note = quality_note(tables, None, [], history=[], state=state, today=date(2026, 10, 1))
+    assert "Pages watched weekly: 1;" in note
