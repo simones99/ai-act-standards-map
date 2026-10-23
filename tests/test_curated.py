@@ -97,3 +97,17 @@ def test_ragged_row_is_reported_not_crashing(curated_copy):
     _rewrite(p, p.read_text() + "R11,11\n")
     errors = check_tables(curated_copy)
     assert any("requirements.csv" in e and "wrong number of fields" in e for e in errors)
+
+
+def test_ragged_row_in_ref_table_is_reported_not_crashing(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text() + "prEN 9,Short\n")
+    errors = check_tables(curated_copy)
+    assert any("standards.csv" in e and "wrong number of fields" in e for e in errors)
+
+
+def test_extra_field_row_is_reported_not_crashing(curated_copy):
+    p = curated_copy / "deadlines.csv"
+    _rewrite(p, p.read_text() + "HR_X,2026-01-01,s,https://a,n,extra\n")
+    errors = check_tables(curated_copy)
+    assert any("deadlines.csv" in e and "wrong number of fields" in e for e in errors)

@@ -54,7 +54,7 @@ def _check_one(curated_dir: Path, table: Table, errors: list[str]) -> Rows | Non
         if key in seen:
             errors.append(f"{fname}:{i}: duplicate {table.key} {key!r}")
         seen.add(key)
-        if None in row or None in row.values():
+        if _is_ragged(row):
             errors.append(f"{fname}:{i}: wrong number of fields")
             continue
         for col in table.required:
@@ -71,7 +71,7 @@ def _check_one(curated_dir: Path, table: Table, errors: list[str]) -> Rows | Non
         for (tname, col), allowed in ENUMS.items():
             if tname == table.name and row[col] not in allowed:
                 errors.append(f"{fname}:{i}: {col} {row[col]!r} not in {sorted(allowed)}")
-    return rows
+    return [row for row in rows if not _is_ragged(row)]
 
 
 def _check_refs(loaded: dict[str, Rows], errors: list[str]) -> None:
@@ -85,6 +85,11 @@ def _check_refs(loaded: dict[str, Rows], errors: list[str]) -> None:
                 for ref in filter(None, (x.strip() for x in row[col].split("|"))):
                     if ref not in keys:
                         errors.append(f"{name}.csv:{i}: {col} {ref!r} not found in {other}.csv")
+
+
+def _is_ragged(row: dict[str, str | None]) -> bool:
+    # DictReader fills missing fields with None and stores extra fields under a None key
+    return None in row or None in row.values()
 
 
 def _is_iso_date(text: str) -> bool:
