@@ -30,6 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
     ws.add_argument("--state", type=Path, default=Path("data/watch_state.json"))
     ws.add_argument("--history", type=Path, default=Path("data/derived/standards_history.csv"))
     ws.add_argument("--no-issues", action="store_true", help="print notifications instead of opening issues")
+    rp = sub.add_parser("report", help="write docs/quality.md")
+    rp.add_argument("--root", type=Path, default=Path("."))
     return p
 
 
@@ -69,6 +71,11 @@ def main(argv: list[str] | None = None) -> int:
         res = watch.run(args.curated, args.state, args.history, date.today(), notify=notify)
         print(f"changed: {len(res.changed)}, failed: {len(res.failed)}, history rows added: {res.appended}")
         return 1 if res.failed else 0
+    if args.cmd == "report":
+        from aasm.report import write as write_report
+
+        print(f"wrote {write_report(args.root, date.today())}")
+        return 0
     parser.print_help()
     return 2
 
