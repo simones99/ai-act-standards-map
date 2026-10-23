@@ -33,7 +33,7 @@ def test_wrong_header_is_reported(curated_copy):
 
 
 def test_bom_and_semicolon_are_rejected(curated_copy):
-    text = "﻿deadline_id;date;scope;source_url;note\nX;2026-01-01;s;https://a;\n"
+    text = "\ufeffdeadline_id;date;scope;source_url;note\nX;2026-01-01;s;https://a;\n"
     _rewrite(curated_copy / "deadlines.csv", text)
     errors = check_tables(curated_copy)
     assert any("deadlines.csv" in e and ("BOM" in e or "header" in e) for e in errors)
@@ -90,3 +90,10 @@ def test_unknown_requirement_in_deliverable_is_reported(curated_copy):
 def test_empty_covers_req_ids_is_allowed(curated_ok):
     # D09 covers nothing inside the perimeter and that is fine
     assert check_tables(curated_ok) == []
+
+
+def test_ragged_row_is_reported_not_crashing(curated_copy):
+    p = curated_copy / "requirements.csv"
+    _rewrite(p, p.read_text() + "R11,11\n")
+    errors = check_tables(curated_copy)
+    assert any("requirements.csv" in e and "wrong number of fields" in e for e in errors)

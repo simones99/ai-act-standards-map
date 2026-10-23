@@ -54,6 +54,9 @@ def _check_one(curated_dir: Path, table: Table, errors: list[str]) -> Rows | Non
         if key in seen:
             errors.append(f"{fname}:{i}: duplicate {table.key} {key!r}")
         seen.add(key)
+        if None in row or None in row.values():
+            errors.append(f"{fname}:{i}: wrong number of fields")
+            continue
         for col in table.required:
             if not row[col].strip():
                 errors.append(f"{fname}:{i}: {col} is empty")
