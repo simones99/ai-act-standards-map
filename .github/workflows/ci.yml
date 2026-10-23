@@ -20,3 +20,6 @@ jobs:
       - run: pip install -e . -r requirements-dev.txt
       - run: ruff check .
       - run: pytest -q
+      - run: aasm check
+      - run: aasm derive --out /tmp/derived
+      - run: aasm build --out /tmp/site
