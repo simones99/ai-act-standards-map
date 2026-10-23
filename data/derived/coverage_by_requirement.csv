@@ -1,0 +1,9 @@
+req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,status
+R08,8,Compliance with the requirements,2026-10-23,0,0,0,0,0,uncovered
+R09,9,Risk management system,2026-10-23,1,1,1,0,0,in_progress
+R10,10,Data and data governance,2026-10-23,1,2,1,0,0,in_progress
+R11,11,Technical documentation,2026-10-23,1,1,1,1,1,harmonised
+R12,12,Record-keeping,2026-10-23,1,1,1,0,0,in_progress
+R13,13,Transparency and provision of information to deployers,2026-10-23,1,1,0,0,0,in_progress
+R14,14,Human oversight,2026-10-23,1,1,1,0,0,in_progress
+R15,15,"Accuracy, robustness and cybersecurity",2026-10-23,3,3,1,0,0,in_progress
