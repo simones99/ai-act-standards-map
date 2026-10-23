@@ -7,7 +7,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader
 
 from aasm import __version__
 from aasm.schema import TABLES
@@ -88,7 +88,7 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
         shutil.copy(quality, out_dir / "quality.md")
     (out_dir / ".nojekyll").write_text("")
 
-    env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=select_autoescape(["html"]))
+    env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=True)
     page = env.get_template("index.html.j2").render(
         today=today.isoformat(), version=__version__, coverage=coverage, timeline=timeline,
         curated_files=curated_files, lineage=lineage, repo_url=REPO_URL,

@@ -55,3 +55,22 @@ def test_cdn_scripts_carry_subresource_integrity(tmp_path, curated_ok):
     scripts = [line for line in html.splitlines() if "cdn.jsdelivr.net" in line]
     assert len(scripts) == 3
     assert all('integrity="sha384-' in s and 'crossorigin="anonymous"' in s for s in scripts)
+
+
+def test_csv_text_is_html_escaped(tmp_path, curated_ok):
+    import csv
+
+    root = _root(tmp_path, curated_ok)
+    path = root / "data" / "derived" / "timeline.csv"
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        rows = list(reader)
+        columns = reader.fieldnames
+    rows[0]["title"] = 'A<b>&"x"'
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(rows)
+    html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
+    assert "A&lt;b&gt;&amp;" in html
+    assert "A<b>" not in html
