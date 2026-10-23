@@ -34,7 +34,7 @@ For each work item and each application date in `deadlines.csv`: `days_target_to
 
 `standards.csv` lists the JTC 21 work items whose public page names mandate M/613 (the CEN-CENELEC reference for C(2025) 3871) and says that an OJEU citation is expected under Regulation (EU) 2024/1689. Work items under the same mandate with no citation expected (supporting standards and technical reports) are left out. Where the link to a deliverable is a judgement, the row says so in `note`.
 
-The JTC 21 work programme shows a status, not a stage code. The status is recorded as: Preliminary 00, Under Drafting 20, Under Enquiry 40, Under Approval 50, Published 60. `stage_date` is the date of the current stage on the work programme. `target_pub_date` is the forecasted voting date on the work programme (availability usually follows by a few weeks); for a published standard it is the date of availability (DAV).
+The JTC 21 work programme shows a status, not a stage code. The status is recorded as: Preliminary 00, Under Drafting 20, Under Enquiry 40, Under Approval 50, Published 60. "Under Drafting" is the work programme's word; the stage list above calls code 20 "preparatory", which is the `stage_name` the derived tables show. `stage_date` is the date of the current stage on the work programme. `target_pub_date` is the forecasted voting date on the work programme (availability usually follows by a few weeks); for a published standard it is the date of availability (DAV).
 
 Work item pages carry a checksum (`cs=`) in their URL. Without it the site answers 200 with an error page, so `watch-standards` treats a page that does not name its work item as failed.
 

@@ -4,7 +4,7 @@ Dated statements read from the tables in this repository. Each one holds at its 
 
 ## As of 2026-10-23
 
-Sources: `data/derived/coverage_by_requirement.csv` and `data/derived/timeline.csv` (`aasm derive`, as of 2026-10-23), built from `data/curated/standards.csv` (retrieved 2026-10-23 from the CEN-CENELEC JTC 21 work programme).
+Sources: `data/derived/coverage_by_requirement.csv` and `data/derived/timeline.csv` (`aasm derive`, as of 2026-10-23), built from `data/curated/standards.csv` (CEN-CENELEC JTC 21 work programme and work item pages, retrieved 2026-10-23; OJ citations from the Official Journal, L series), `request_deliverables.csv` (C(2025) 3871) and `deadlines.csv` (Regulation (EU) 2026/1744).
 
 ### Coverage by requirement
 
@@ -18,6 +18,8 @@ Sources: `data/derived/coverage_by_requirement.csv` and `data/derived/timeline.c
 | 13 | Transparency and provision of information to deployers | 1 | 1 | 0 | 0 | in_progress |
 | 14 | Human oversight | 1 | 1 | 1 | 0 | in_progress |
 | 15 | Accuracy, robustness and cybersecurity | 3 | 3 | 1 | 0 | in_progress |
+
+Status codes (see `docs/methodology.md`): `harmonised`: a linked standard is cited in the Official Journal; `published`: a linked standard is published (stage 60 or 90) but not cited; `in_progress`: at least one linked work item, none published; `uncovered`: no linked work item.
 
 Article 11 has no deliverable of its own in C(2025) 3871; the 1 shown is D09 (quality management), linked by this project (see below).
 
@@ -39,7 +41,7 @@ Article 11 has no deliverable of its own in C(2025) 3871; the 1 shown is D09 (qu
 - Of the 10 work items not yet published, 7 had a forecasted voting date on the work programme before 2 December 2027 as of 2026-10-23; EN 18286:2026 had been available since 2026-07-22. The shortest gap is 134 days, for prEN 18229-4 (accuracy) and prEN 18229-5 (robustness): both under drafting, with a forecasted vote on 2027-07-21. These are forecasts of a vote. Availability follows the vote, and citation in the Official Journal follows availability: for EN 18286:2026, citation came 84 days after availability.
 - 3 of the 10 have a forecasted voting date that has already passed without a vote (`target_passed`):
 
-| Work item | Deliverable | Status on the work programme | Since | Forecasted voting date |
+| Work item | Deliverable | Status on the work programme | Stage date on the work programme | Forecasted voting date |
 |---|---|---|---|---|
 | prEN 18228, AI Risk Management | D01 | Under Approval | 2026-07-30 | 2026-09-30 |
 | prEN 18282, Cybersecurity specifications for AI Systems | D08 | Under Approval | 2026-07-30 | 2026-07-15 |
