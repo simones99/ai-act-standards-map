@@ -1,0 +1,73 @@
+import csv
+import json
+from datetime import date
+from pathlib import Path
+
+from aasm.watch import append_history, fingerprint, open_issue, run
+
+PAGE = (Path(__file__).parent / "fixtures" / "page_a.html").read_text()
+
+
+def test_fingerprint_ignores_scripts_and_whitespace():
+    a = fingerprint(PAGE)
+    b = fingerprint(PAGE.replace("Date.now()", "Date.now()+1").replace("<p>", "<p>\n   "))
+    assert a == b and len(a) == 64
+
+
+def test_fingerprint_changes_when_visible_text_changes():
+    assert fingerprint(PAGE) != fingerprint(PAGE.replace("40.20 Enquiry", "50.20 Approval"))
+
+
+def test_append_history_adds_only_changed_stages(tmp_path):
+    hist = tmp_path / "standards_history.csv"
+    std = [{"wi_ref": "prEN 1", "stage_code": "40"}, {"wi_ref": "prEN 2", "stage_code": "20"}]
+    assert append_history(hist, std, date(2026, 10, 1)) == 2
+    assert append_history(hist, std, date(2026, 10, 8)) == 0
+    std[0]["stage_code"] = "50"
+    assert append_history(hist, std, date(2026, 10, 15)) == 1
+    rows = list(csv.DictReader(hist.open()))
+    assert [(r["wi_ref"], r["stage_code"], r["observed_at"]) for r in rows] == [
+        ("prEN 1", "40", "2026-10-01"), ("prEN 2", "20", "2026-10-01"), ("prEN 1", "50", "2026-10-15")]
+
+
+class Resp:
+    def __init__(self, text, status=200):
+        self.text, self.status_code = text, status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+
+def test_run_records_state_and_reports_changes(curated_ok, tmp_path):
+    state, hist = tmp_path / "state.json", tmp_path / "hist.csv"
+    notes = []
+    first = run(curated_ok, state, hist, date(2026, 10, 1),
+                get=lambda url, timeout: Resp(PAGE), notify=notes.append)
+    assert first.changed == [] and first.failed == [] and first.appended == 1
+    assert json.loads(state.read_text())["prEN 1"]["sha256"] == fingerprint(PAGE)
+    second = run(curated_ok, state, hist, date(2026, 10, 8),
+                 get=lambda url, timeout: Resp(PAGE.replace("40.20", "50.20")), notify=notes.append)
+    assert second.changed == ["prEN 1"]
+    assert len(notes) == 1 and "prEN 1" in notes[0][0]
+
+
+def test_run_keeps_going_after_a_failure_and_notifies_once(curated_copy, tmp_path):
+    p = curated_copy / "standards.csv"
+    p.write_text(p.read_text() + "prEN 2,Other,D01,20,2026-01-01,,false,,https://standards.cencenelec.eu/x/2,2026-10-01,\n")
+    notes = []
+
+    def get(url, timeout):
+        return Resp("gone", 404) if url.endswith("/2") else Resp(PAGE)
+
+    res = run(curated_copy, tmp_path / "s.json", tmp_path / "h.csv", date(2026, 10, 1),
+              get=get, notify=notes.append)
+    assert res.failed == ["prEN 2"] and res.changed == []
+    assert json.loads((tmp_path / "s.json").read_text()).keys() == {"prEN 1"}
+    assert len(notes) == 1 and "failed" in notes[0][0].lower()
+
+
+def test_open_issue_calls_gh(tmp_path):
+    calls = []
+    open_issue("Title", "Body", run=lambda cmd, check: calls.append(cmd))
+    assert calls[0][:3] == ["gh", "issue", "create"] and "--title" in calls[0] and "Title" in calls[0]

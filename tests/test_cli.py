@@ -26,3 +26,20 @@ def test_derive_writes_two_files(curated_ok, tmp_path):
     args = ["derive", "--curated", str(curated_ok), "--out", str(tmp_path), "--as-of", "2026-10-01"]
     assert main(args) == 0
     assert (tmp_path / "coverage_by_requirement.csv").exists() and (tmp_path / "timeline.csv").exists()
+
+
+def test_watch_standards_exit_code_is_1_on_failure(curated_copy, tmp_path, monkeypatch):
+    import aasm.watch as watch
+
+    class Gone:
+        status_code = 404
+        text = ""
+
+        def raise_for_status(self):
+            raise RuntimeError("HTTP 404")
+
+    monkeypatch.setattr(watch.requests, "get", lambda url, timeout: Gone())
+    monkeypatch.setattr(watch, "_notify_with_gh", lambda item: None)
+    args = ["watch-standards", "--curated", str(curated_copy), "--state", str(tmp_path / "s.json"),
+            "--history", str(tmp_path / "h.csv")]
+    assert main(args) == 1

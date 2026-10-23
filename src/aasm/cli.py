@@ -25,6 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     dv.add_argument("--curated", type=Path, default=DEFAULT_CURATED)
     dv.add_argument("--out", type=Path, default=Path("data/derived"))
     dv.add_argument("--as-of", type=date.fromisoformat, default=None)
+    ws = sub.add_parser("watch-standards", help="detect changes on the public pages of the work items")
+    ws.add_argument("--curated", type=Path, default=DEFAULT_CURATED)
+    ws.add_argument("--state", type=Path, default=Path("data/watch_state.json"))
+    ws.add_argument("--history", type=Path, default=Path("data/derived/standards_history.csv"))
+    ws.add_argument("--no-issues", action="store_true", help="print notifications instead of opening issues")
     return p
 
 
@@ -57,6 +62,13 @@ def main(argv: list[str] | None = None) -> int:
         counts = write_derived(load_all(args.curated), args.as_of or date.today(), args.out)
         print(", ".join(f"{k}: {v} rows" for k, v in counts.items()))
         return 0
+    if args.cmd == "watch-standards":
+        from aasm import watch
+
+        notify = (lambda item: print(f"[notify] {item[0]}")) if args.no_issues else watch._notify_with_gh
+        res = watch.run(args.curated, args.state, args.history, date.today(), notify=notify)
+        print(f"changed: {len(res.changed)}, failed: {len(res.failed)}, history rows added: {res.appended}")
+        return 1 if res.failed else 0
     parser.print_help()
     return 2
 
