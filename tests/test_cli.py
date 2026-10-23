@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from aasm import __version__
 from aasm.cli import main
 
@@ -12,3 +14,9 @@ def test_check_command_exit_code(curated_ok, curated_copy, capsys):
     (curated_copy / "deadlines.csv").unlink()
     assert main(["check", "--curated", str(curated_copy)]) == 1
     assert "deadlines.csv: missing" in capsys.readouterr().out
+
+
+def test_fetch_eurostat_offline(tmp_path):
+    fixture = Path(__file__).parent / "fixtures" / "isoc_eb_ain2.json"
+    assert main(["fetch-eurostat", "--out", str(tmp_path), "--from-file", str(fixture)]) == 0
+    assert (tmp_path / "adoption.csv").exists() and (tmp_path / "lineage.json").exists()
