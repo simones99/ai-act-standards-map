@@ -20,3 +20,9 @@ def test_fetch_eurostat_offline(tmp_path):
     fixture = Path(__file__).parent / "fixtures" / "isoc_eb_ain2.json"
     assert main(["fetch-eurostat", "--out", str(tmp_path), "--from-file", str(fixture)]) == 0
     assert (tmp_path / "adoption.csv").exists() and (tmp_path / "lineage.json").exists()
+
+
+def test_derive_writes_two_files(curated_ok, tmp_path):
+    args = ["derive", "--curated", str(curated_ok), "--out", str(tmp_path), "--as-of", "2026-10-01"]
+    assert main(args) == 0
+    assert (tmp_path / "coverage_by_requirement.csv").exists() and (tmp_path / "timeline.csv").exists()

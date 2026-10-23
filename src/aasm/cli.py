@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from aasm import __version__
@@ -20,6 +21,10 @@ def build_parser() -> argparse.ArgumentParser:
     fe = sub.add_parser("fetch-eurostat", help="download adoption data with lineage")
     fe.add_argument("--out", type=Path, default=Path("data/fetched"))
     fe.add_argument("--from-file", type=Path, default=None, help="offline: a saved JSON-stat response")
+    dv = sub.add_parser("derive", help="write the derived tables")
+    dv.add_argument("--curated", type=Path, default=DEFAULT_CURATED)
+    dv.add_argument("--out", type=Path, default=Path("data/derived"))
+    dv.add_argument("--as-of", type=date.fromisoformat, default=None)
     return p
 
 
@@ -40,6 +45,17 @@ def main(argv: list[str] | None = None) -> int:
 
         lineage = fetch_from_file(args.out, args.from_file) if args.from_file else fetch(args.out)
         print(f"{lineage['rows']} rows, sha256 {lineage['sha256'][:12]}")
+        return 0
+    if args.cmd == "derive":
+        from aasm.curated import load_all
+        from aasm.derive import write_derived
+
+        errors = check_tables(args.curated)
+        if errors:
+            print("\n".join(errors))
+            return 1
+        counts = write_derived(load_all(args.curated), args.as_of or date.today(), args.out)
+        print(", ".join(f"{k}: {v} rows" for k, v in counts.items()))
         return 0
     parser.print_help()
     return 2
