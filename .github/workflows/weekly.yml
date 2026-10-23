@@ -19,6 +19,8 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      watch: ${{ steps.watch.outcome }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -31,6 +33,7 @@ jobs:
       - name: Fetch Eurostat adoption data
         run: aasm fetch-eurostat
       - name: Watch the public pages of the work items
+        id: watch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: aasm watch-standards
@@ -53,6 +56,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+
+  watch-status:
+    needs: update
+    if: ${{ needs.update.outputs.watch == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "watch-standards reported failed pages; see the needs-review issue" && exit 1
 
   publish:
     needs: update
