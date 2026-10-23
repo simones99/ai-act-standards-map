@@ -27,3 +27,17 @@ def test_every_in_perimeter_requirement_is_covered_by_a_deliverable():
     for d in load_table(REAL, "request_deliverables"):
         covered |= {x for x in d["covers_req_ids"].split("|") if x}
     assert covered == {f"R{n:02d}" for n in range(9, 16)}  # Article 8 is the umbrella clause
+
+
+def test_every_deliverable_has_at_least_one_work_item_or_a_note():
+    standards = load_table(REAL, "standards")
+    deliverables = load_table(REAL, "request_deliverables")
+    with_wi = {s["deliverable_id"] for s in standards}
+    for d in deliverables:
+        assert d["deliverable_id"] in with_wi or "no work item" in d["note"].lower(), d["deliverable_id"]
+
+
+def test_standards_have_a_recent_retrieved_at():
+    from datetime import date
+    for s in load_table(REAL, "standards"):
+        assert date.fromisoformat(s["retrieved_at"]) >= date(2026, 10, 1), s["wi_ref"]

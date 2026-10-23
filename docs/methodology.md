@@ -24,11 +24,19 @@ For each requirement `req_id` at a date `as_of`:
 
 A requirement with no deliverable (Article 8, the umbrella clause) is `uncovered` with `n_deliverables = 0`, which the site shows as such.
 
-Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. The status of Article 11 therefore follows the quality management work items.
+Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. The status of Article 11 therefore follows the quality management work items. When it reads `harmonised`, it means that the standard the request names as the main carrier of Article 11 is cited in the Official Journal; how far that standard covers Article 11 is stated in its Annex ZA, which is not public.
 
 ## Timeline
 
 For each work item and each application date in `deadlines.csv`: `days_target_to_deadline = deadline_date - target_pub_date`; negative means the target publication falls after the deadline (`late_vs_deadline = true`). No target date gives `unknown`.
+
+## Work items
+
+`standards.csv` lists the JTC 21 work items whose public page names mandate M/613 (the CEN-CENELEC reference for C(2025) 3871) and says that an OJEU citation is expected under Regulation (EU) 2024/1689. Work items under the same mandate with no citation expected (supporting standards and technical reports) are left out. Where the link to a deliverable is a judgement, the row says so in `note`.
+
+The JTC 21 work programme shows a status, not a stage code. The status is recorded as: Preliminary 00, Under Drafting 20, Under Enquiry 40, Under Approval 50, Published 60. `stage_date` is the date of the current stage on the work programme. `target_pub_date` is the forecasted voting date on the work programme (availability usually follows by a few weeks); for a published standard it is the date of availability (DAV).
+
+Work item pages carry a checksum (`cs=`) in their URL. Without it the site answers 200 with an error page, so `watch-standards` treats a page that does not name its work item as failed.
 
 ## Weekly watch
 
