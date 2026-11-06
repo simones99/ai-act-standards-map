@@ -18,7 +18,7 @@ def test_methodology_defines_the_four_statuses():
 
 def test_citation_file_is_valid_enough():
     text = (ROOT / "CITATION.cff").read_text()
-    assert "cff-version" in text and "title" in text and "version: 0.1.0" in text
+    assert "cff-version" in text and "title" in text and "version: 0.1.1" in text
 
 
 def test_results_are_dated():

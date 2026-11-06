@@ -2,7 +2,7 @@ import json
 import shutil
 from datetime import date
 
-from aasm.site import build, vega_specs
+from aasm.site import build, timeline_by_item, vega_specs
 
 
 def _root(tmp_path, curated_ok):
@@ -121,12 +121,12 @@ def test_coverage_labels_each_bar_with_its_status_so_a_zero_bar_still_shows_it()
             "n_work_items": "0"}]
     spec = vega_specs(cov, [])["coverage"]
     assert [layer["mark"]["type"] for layer in spec["layer"]] == ["bar", "text"]
-    assert spec["layer"][1]["encoding"]["text"]["field"] == "status"
+    assert spec["layer"][1]["encoding"]["text"]["field"] == "status_label"
     # position and colour are shared by both layers, so the label sits at the bar's end in the status colour
-    assert spec["encoding"]["x"]["field"] == "n_work_items" and spec["encoding"]["y"]["field"] == "title"
+    assert spec["encoding"]["x"]["field"] == "n_work_items"
     assert spec["encoding"]["color"]["scale"] == {
         "domain": ["uncovered", "in_progress", "published", "harmonised"],
-        "range": ["#9b1c1c", "#c98a00", "#1f4e79", "#1e6b3a"]}
+        "range": ["#9b1c1c", "#8a5a00", "#1f4e79", "#1e6b3a"]}
     assert "encoding" not in spec["layer"][0]
 
 
@@ -144,3 +144,56 @@ def test_page_links_history_and_adoption_when_they_exist(tmp_path, curated_ok):
     (root / "data" / "fetched" / "adoption.csv").write_text("geo\n")
     html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
     assert 'href="data/standards_history.csv"' in html and 'href="data/adoption.csv"' in html
+
+
+def test_timeline_by_item_gives_one_row_per_work_item_with_its_days_to_each_deadline():
+    tl = [{"wi_ref": "prEN 1", "title": "RM", "deadline_id": "HR_ANNEX1", "deadline_date": "2028-08-02",
+           "days_target_to_deadline": "503", "late_vs_deadline": "false"},
+          {"wi_ref": "prEN 1", "title": "RM", "deadline_id": "HR_ANNEX3", "deadline_date": "2027-12-02",
+           "days_target_to_deadline": "259", "late_vs_deadline": "false"},
+          {"wi_ref": "prEN 2", "title": "Data", "deadline_id": "HR_ANNEX3", "deadline_date": "2027-12-02",
+           "days_target_to_deadline": "", "late_vs_deadline": "target_passed"}]
+    deadlines, items = timeline_by_item(tl)
+    assert deadlines == [{"deadline_id": "HR_ANNEX3", "deadline_date": "2027-12-02"},
+                         {"deadline_id": "HR_ANNEX1", "deadline_date": "2028-08-02"}]  # earliest first
+    assert [i["wi_ref"] for i in items] == ["prEN 1", "prEN 2"]
+    assert items[0]["title"] == "RM"
+    assert items[0]["days"] == {"HR_ANNEX3": {"days": "259", "late": "false"},
+                                "HR_ANNEX1": {"days": "503", "late": "false"}}
+    assert items[1]["days"] == {"HR_ANNEX3": {"days": "", "late": "target_passed"}}
+
+
+def _two_deadline_root(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    path = root / "data" / "derived" / "timeline.csv"
+    path.write_text(path.read_text() + "prEN 1,Risk management,D01,40,enquiry,2026-03-01,2026-12-01,"
+                                       "HR_ANNEX1,2027-08-02,244,false\n")
+    return root
+
+
+def test_page_shows_a_work_item_once_with_a_column_per_deadline(tmp_path, curated_ok):
+    html = (build(_two_deadline_root(tmp_path, curated_ok), tmp_path / "_site", date(2026, 10, 1))
+            / "index.html").read_text()
+    assert html.count(">prEN 1</td>") == 1
+    assert "HR_ANNEX3" in html and "HR_ANNEX1" in html
+    assert ">-121<" in html and ">244<" in html
+
+
+def test_page_explains_each_deadline_with_its_curated_scope(tmp_path, curated_ok):
+    out = build(_root(tmp_path, curated_ok), tmp_path / "_site", date(2026, 10, 1))
+    html = (out / "index.html").read_text()
+    assert "HR_ANNEX3 (2026-08-02): Annex III high-risk systems" in html
+
+
+def test_coverage_chart_names_bars_by_article_and_statuses_in_plain_words():
+    spec = vega_specs([], [])["coverage"]
+    made = {t["as"]: t["calculate"] for t in spec["transform"]}
+    assert made == {"article_label": "'Article ' + datum.article",
+                    "status_label": "replace(datum.status, '_', ' ')"}
+    assert spec["encoding"]["y"]["field"] == "article_label"
+
+
+def test_timeline_chart_marks_the_as_of_date():
+    spec = vega_specs([], [], as_of="2026-10-01")["timeline"]
+    marks = [layer for layer in spec["layer"] if layer.get("data") == {"values": [{"as_of": "2026-10-01"}]}]
+    assert marks and all(layer["encoding"]["x"]["field"] == "as_of" for layer in marks)

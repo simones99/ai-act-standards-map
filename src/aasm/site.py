@@ -15,61 +15,125 @@ from aasm.schema import TABLES
 REPO_URL = "https://github.com/simones99/ai-act-standards-map"
 TEMPLATES = Path(__file__).resolve().parents[2] / "site" / "templates"
 STATUS_ORDER = ["uncovered", "in_progress", "published", "harmonised"]
-STATUS_COLOURS = ["#9b1c1c", "#c98a00", "#1f4e79", "#1e6b3a"]
+STATUS_COLOURS = ["#9b1c1c", "#8a5a00", "#1f4e79", "#1e6b3a"]  # each at least 4.5:1 on white, as text too
+LATE_ORDER = ["false", "true", "target_passed", "unknown"]
+LATE_COLOURS = ["#1e6b3a", "#9b1c1c", "#8a5a00", "#6b6b6b"]
+LATE_LABELS = ("{'false': 'target before the deadline', 'true': 'target after the deadline', "
+               "'target_passed': 'target date passed, not published', "
+               "'unknown': 'no target date'}[datum.label]")
+INK, MUTED, LINE = "#1b1b1b", "#5b5b5b", "#e3e3e3"
+CHART_CONFIG = {
+    "font": "system-ui, sans-serif",
+    "view": {"stroke": None},
+    "axis": {"labelFontSize": 12, "titleFontSize": 12, "titleFontWeight": 500, "labelColor": INK,
+             "titleColor": MUTED, "gridColor": LINE, "domainColor": LINE, "tickColor": LINE,
+             "labelLimit": 160, "titlePadding": 8},
+    "legend": {"labelFontSize": 12, "titleFontSize": 12, "titleFontWeight": 500, "labelColor": INK,
+               "titleColor": MUTED, "orient": "top", "direction": "vertical", "symbolSize": 80,
+               "labelLimit": 280, "titleLimit": 400},
+    "text": {"fontSize": 12},
+}
 
 
 def _read_csv(path: Path) -> list[dict]:
     return list(csv.DictReader(path.open(encoding="utf-8", newline=""))) if path.exists() else []
 
 
-def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
+def timeline_by_item(timeline: list[dict]) -> tuple[list[dict], list[dict]]:
+    """One row per work item, with its days to each deadline; deadlines earliest first."""
+    seen = {r["deadline_id"]: r["deadline_date"] for r in timeline}
+    deadlines = [{"deadline_id": k, "deadline_date": v}
+                 for k, v in sorted(seen.items(), key=lambda kv: kv[1])]
+    items: dict[str, dict] = {}
+    for r in timeline:
+        per_deadline = ("deadline_id", "deadline_date", "days_target_to_deadline", "late_vs_deadline")
+        item = items.setdefault(r["wi_ref"], {**{k: v for k, v in r.items() if k not in per_deadline},
+                                              "days": {}})
+        item["days"][r["deadline_id"]] = {"days": r["days_target_to_deadline"],
+                                          "late": r["late_vs_deadline"]}
+    for item in items.values():
+        item["days"] = {d["deadline_id"]: item["days"][d["deadline_id"]]
+                        for d in deadlines if d["deadline_id"] in item["days"]}
+    return deadlines, list(items.values())
+
+
+def vega_specs(coverage: list[dict], timeline: list[dict], as_of: str | None = None) -> dict[str, dict]:
     coverage_spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Coverage status of each requirement",
         "data": {"values": coverage, "format": {"parse": {"article": "number"}}},
-        "height": {"step": 26},
+        "transform": [{"calculate": "'Article ' + datum.article", "as": "article_label"},
+                      {"calculate": "replace(datum.status, '_', ' ')", "as": "status_label"}],
+        "height": {"step": 30},
         "width": "container",
+        "config": CHART_CONFIG,
         "encoding": {
-            "y": {"field": "title", "type": "nominal", "sort": {"field": "article"}, "title": None},
-            "x": {"field": "n_work_items", "type": "quantitative", "title": "Work items reached"},
-            "color": {"field": "status", "type": "nominal",
-                      "scale": {"domain": STATUS_ORDER, "range": STATUS_COLOURS}, "title": "Status"},
-            "tooltip": [{"field": "article", "title": "Article"}, {"field": "title"}, {"field": "status"},
+            "y": {"field": "article_label", "type": "nominal", "sort": {"field": "article"}, "title": None},
+            "x": {"field": "n_work_items", "type": "quantitative", "title": "Work items reached",
+                  "axis": {"tickMinStep": 1, "format": "d"}, "scale": {"nice": False, "padding": 0}},
+            # the label on each bar names the status, so the chart needs no legend
+            "color": {"field": "status", "type": "nominal", "legend": None,
+                      "scale": {"domain": STATUS_ORDER, "range": STATUS_COLOURS}},
+            "tooltip": [{"field": "article", "title": "Article"}, {"field": "title", "title": "Requirement"},
+                        {"field": "status_label", "title": "Status"},
                         {"field": "n_work_items", "title": "Work items"}],
         },
         # The label carries the status colour where the bar has no length (no work item reached)
         "layer": [
-            {"mark": {"type": "bar"}},
-            {"mark": {"type": "text", "align": "left", "dx": 4},
-             "encoding": {"text": {"field": "status", "type": "nominal"}}},
+            {"mark": {"type": "bar", "height": {"band": 0.62}}},
+            {"mark": {"type": "text", "align": "left", "dx": 6, "fontWeight": 500},
+             "encoding": {"text": {"field": "status_label", "type": "nominal"}}},
         ],
     }
     # One point per work item: colour against the earliest deadline; every deadline is still drawn as a rule.
     first = min(timeline, key=lambda r: r["deadline_date"])["deadline_id"] if timeline else ""
+    late = {"field": "late_vs_deadline", "type": "nominal", "title": f"Target vs {first} deadline",
+            "legend": {"labelExpr": LATE_LABELS}}
     timeline_spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Target publication of each work item against the application dates",
         "data": {"values": timeline},
         "width": "container",
-        "height": {"step": 26},
+        "height": {"step": 30},
+        "config": CHART_CONFIG,
         "layer": [
-            {"mark": {"type": "rule", "strokeDash": [4, 4], "color": "#9b1c1c"},
+            {"mark": {"type": "rule", "strokeDash": [4, 4], "color": INK},
              "encoding": {"x": {"field": "deadline_date", "type": "temporal"}}},
-            {"mark": {"type": "point", "filled": True, "size": 90},
+            {"mark": {"type": "point", "filled": True, "size": 110, "opacity": 1},
              "transform": [{"filter": {"field": "deadline_id", "equal": first}}],
              "encoding": {
                  "x": {"field": "target_pub_date", "type": "temporal", "title": "Target publication",
-                       "axis": {"format": "%b %Y"}},
-                 "y": {"field": "wi_ref", "type": "nominal", "title": None},
-                 "color": {"field": "late_vs_deadline", "type": "nominal", "title": f"Late vs {first}",
-                           "scale": {"domain": ["false", "true", "target_passed", "unknown"],
-                                     "range": ["#1e6b3a", "#9b1c1c", "#c98a00", "#888888"]}},
-                 "tooltip": [{"field": "wi_ref"}, {"field": "stage_name", "title": "Stage"},
+                       "axis": {"format": "%b %Y", "labelFlush": False}, "scale": {"padding": 16}},
+                 "y": {"field": "wi_ref", "type": "nominal", "title": None, "sort": None},
+                 "color": {**late, "scale": {"domain": LATE_ORDER, "range": LATE_COLOURS}},
+                 # shape repeats the colour, so the reading does not depend on colour alone
+                 "shape": {**late, "scale": {"domain": LATE_ORDER,
+                                             "range": ["circle", "triangle-up", "diamond", "square"]}},
+                 "tooltip": [{"field": "wi_ref", "title": "Work item"}, {"field": "title", "title": "Title"},
+                             {"field": "stage_name", "title": "Stage"},
                              {"field": "target_pub_date", "title": "Target"},
                              {"field": "deadline_id", "title": "Deadline"}],
              }},
+            # labels run down the rules, so they do not collide on a narrow screen
+            {"mark": {"type": "text", "angle": 270, "align": "right", "baseline": "bottom", "dx": -4,
+                      "dy": -4, "color": INK, "fontWeight": 500},
+             "transform": [{"aggregate": [{"op": "count", "as": "n"}],
+                            "groupby": ["deadline_id", "deadline_date"]}],
+             "encoding": {"x": {"field": "deadline_date", "type": "temporal"}, "y": {"value": 0},
+                          "text": {"field": "deadline_id", "type": "nominal"}}},
         ],
     }
+    if as_of:
+        today = {"values": [{"as_of": as_of}]}
+        timeline_spec["layer"] += [
+            {"data": today, "mark": {"type": "rule", "color": MUTED},
+             "encoding": {"x": {"field": "as_of", "type": "temporal"}}},
+            {"data": today,
+             "mark": {"type": "text", "angle": 270, "align": "right", "baseline": "bottom", "dx": -4,
+                      "dy": -4, "color": MUTED},
+             "encoding": {"x": {"field": "as_of", "type": "temporal"}, "y": {"value": 0},
+                          "text": {"value": f"as of {as_of}"}}},
+        ]
     return {"coverage": coverage_spec, "timeline": timeline_spec}
 
 
@@ -78,6 +142,10 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
     derived, curated, fetched = data / "derived", data / "curated", data / "fetched"
     coverage = _read_csv(derived / "coverage_by_requirement.csv")
     timeline = _read_csv(derived / "timeline.csv")
+    deadlines, items = timeline_by_item(timeline)
+    scopes = {d["deadline_id"]: d["scope"] for d in _read_csv(curated / "deadlines.csv")}
+    for d in deadlines:
+        d["scope"] = scopes.get(d["deadline_id"], "")
     deliverables = _read_csv(curated / "request_deliverables.csv")
     # A judged mapping must be visible where the status is shown, not only in the CSV
     coverage_notes = [{"article": r["article"], "deliverable_id": d["deliverable_id"], "note": d["note"]}
@@ -107,9 +175,9 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
     env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=True)
     page = env.get_template("index.html.j2").render(
         today=today.isoformat(), version=__version__, coverage=coverage, coverage_notes=coverage_notes,
-        timeline=timeline,
+        deadlines=deadlines, items=items,
         curated_files=curated_files, other_files=other_files, lineage=lineage, repo_url=REPO_URL,
-        specs=vega_specs(coverage, timeline),
+        specs=vega_specs(coverage, timeline, today.isoformat()),
     )
     (out_dir / "index.html").write_text(page, encoding="utf-8")
     return out_dir

@@ -4,22 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Act standards map</title>
+<link rel="icon" href="data:,">
 <meta name="description" content="Which AI Act high-risk requirements are covered by harmonised standards, and when.">
 <script src="https://cdn.jsdelivr.net/npm/vega@5.30.0" integrity="sha384-em7CHpJd+SsMugVFf6TY7AKQcLWMcbPhD84hmNK8o6WFDkK+2uHSUQRVQV1/w827" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0" integrity="sha384-GhkD6ks9/zgY1m5EFOUZWz/vMVMUFF/92DL61RZc+B42J8osL+jNufKv68bNHHZ2" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0" integrity="sha384-TqXb8su49m5OnEpKGO8m+VrgHesrUxyP22HgpXi4hnh1Hm43dXroiSYemNf5D8lv" crossorigin="anonymous"></script>
 <style>
-  :root { --ink:#1b1b1b; --muted:#5b5b5b; --line:#d9d9d9; --bg:#ffffff; --accent:#1f4e79; }
-  body { margin:0; font:16px/1.5 system-ui, sans-serif; color:var(--ink); background:var(--bg); }
-  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 1.8rem; margin: 0 0 4px; } h2 { font-size: 1.25rem; margin-top: 40px; }
+  :root { --ink:#1b1b1b; --muted:#5b5b5b; --line:#d9d9d9; --hair:#ececec; --bg:#ffffff; --accent:#1f4e79;
+          --uncovered:#9b1c1c; --in-progress:#8a5a00; --published:#1f4e79; --harmonised:#1e6b3a; }
+  ::selection { background:#d6e4f2; color:var(--ink); }
+  body { margin:0; font:16px/1.55 system-ui, sans-serif; color:var(--ink); background:var(--bg);
+         -webkit-text-size-adjust:100%; }
+  main { max-width: 1000px; margin: 0 auto; padding: 40px 20px 72px; }
+  h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -.015em; margin: 0 0 12px; text-wrap: balance; }
+  h2 { font-size: 1.3rem; line-height: 1.25; letter-spacing: -.01em; margin: 64px 0 8px; padding-top: 20px;
+       border-top: 1px solid var(--ink); text-wrap: balance; }
+  p, li { max-width: 72ch; }
+  p { margin: 0 0 12px; }
   .meta, footer { color: var(--muted); font-size: .9rem; }
-  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .status-uncovered { color:#9b1c1c; } .status-in_progress { color:#8a5a00; }
-  .status-published { color:#1f4e79; } .status-harmonised { color:#1e6b3a; }
+  code { font-size: .9em; }
+  .table-wrap { overflow-x: auto; margin: 20px 0 12px; }
+  .table-wrap:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th:first-child, td:first-child { padding-left: 0; } th:last-child, td:last-child { padding-right: 0; }
+  thead th { font-size: .8rem; font-weight: 600; color: var(--muted); vertical-align: bottom;
+             border-bottom: 1px solid var(--ink); }
+  thead th span { display: block; font-weight: 400; }
+  .num { text-align: right; } .nowrap { white-space: nowrap; }
+  #coverage-table { min-width: 620px; } #timeline-table { min-width: 760px; }
+  .status { white-space: nowrap; font-weight: 500; }
+  .status::before { content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .5em;
+                    background: currentColor; }
+  .status-uncovered, .late { color: var(--uncovered); } .status-in_progress, .passed { color: var(--in-progress); }
+  .status-published { color: var(--published); } .status-harmonised { color: var(--harmonised); }
+  .unknown { color: var(--muted); }
   .chart { width: 100%; margin: 12px 0 0; }
-  a { color: var(--accent); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: .16em; }
+  a:hover { text-decoration-thickness: 2px; }
+  ul { padding-left: 1.1em; } li { margin-bottom: 6px; }
+  footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); }
+  @media (max-width: 600px) {
+    main { padding: 28px 16px 56px; } h1 { font-size: 1.65rem; } h2 { margin-top: 48px; }
+  }
 </style>
 </head>
 <body>
@@ -30,28 +57,36 @@
 
 <h2>Coverage by requirement</h2>
 <div id="coverage" class="chart"></div>
-<table>
-<thead><tr><th>Article</th><th>Requirement</th><th>Deliverables</th><th>Work items</th><th>At enquiry or later</th><th>Published</th><th>Cited in OJEU</th><th>Status</th></tr></thead>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Coverage by requirement, table">
+<table id="coverage-table">
+<thead><tr><th scope="col">Article</th><th scope="col">Requirement</th><th scope="col" class="num">Deliverables</th><th scope="col" class="num">Work items</th><th scope="col" class="num">At enquiry or later</th><th scope="col" class="num">Published</th><th scope="col" class="num">Cited in OJEU</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for r in coverage %}
-<tr><td>{{ r.article }}</td><td>{{ r.title }}</td><td>{{ r.n_deliverables }}</td><td>{{ r.n_work_items }}</td><td>{{ r.n_at_enquiry_or_later }}</td><td>{{ r.n_published }}</td><td>{{ r.n_harmonised }}</td><td class="status-{{ r.status }}">{{ r.status.replace('_',' ') }}</td></tr>
+<tr><td>{{ r.article }}</td><td>{{ r.title }}</td><td class="num">{{ r.n_deliverables }}</td><td class="num">{{ r.n_work_items }}</td><td class="num">{{ r.n_at_enquiry_or_later }}</td><td class="num">{{ r.n_published }}</td><td class="num">{{ r.n_harmonised }}</td><td class="status status-{{ r.status }}">{{ r.status.replace('_',' ') }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
 {% for n in coverage_notes %}
 <p class="meta">Article {{ n.article }} (via {{ n.deliverable_id }}): {{ n.note }}</p>
 {% endfor %}
 
 <h2>Work items against the application dates</h2>
 <div id="timeline" class="chart"></div>
-<table>
-<thead><tr><th>Work item</th><th>Title</th><th>Deliverable</th><th>Stage</th><th>Target publication</th><th>Deadline</th><th>Days to deadline</th></tr></thead>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Work items against the application dates, table">
+<table id="timeline-table">
+<thead><tr><th scope="col">Work item</th><th scope="col">Title</th><th scope="col">Deliverable</th><th scope="col">Stage</th><th scope="col">Target publication</th>{% for d in deadlines %}<th scope="col" class="num">Days from target to {{ d.deadline_id }}<span>{{ d.deadline_date }}</span></th>{% endfor %}</tr></thead>
 <tbody>
-{% for t in timeline %}
-<tr><td>{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td>{{ t.target_pub_date or '—' }}</td><td>{{ t.deadline_id }} ({{ t.deadline_date }})</td><td>{{ t.days_target_to_deadline if t.days_target_to_deadline != '' else ('target date passed' if t.late_vs_deadline == 'target_passed' else 'unknown') }}</td></tr>
+{% for t in items %}
+<tr><td class="nowrap">{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td class="nowrap">{{ t.target_pub_date or '—' }}</td>{% for d in deadlines %}{% set c = t.days.get(d.deadline_id) %}{% if not c %}<td class="num unknown">—</td>{% elif c.days != '' %}<td class="num{{ ' late' if c.late == 'true' }}">{{ c.days }}</td>{% elif c.late == 'target_passed' %}<td class="num passed">target date passed</td>{% else %}<td class="num unknown">unknown</td>{% endif %}{% endfor %}</tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
+<p class="meta">Days are counted from the target publication date to the deadline; a negative number means the target falls after the deadline.</p>
+{% for d in deadlines %}
+<p class="meta">{{ d.deadline_id }} ({{ d.deadline_date }}){% if d.scope %}: {{ d.scope }}{% endif %}</p>
+{% endfor %}
 
 <h2>Data and method</h2>
 <ul>
