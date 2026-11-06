@@ -1,4 +1,4 @@
-<!doctype html>
+{% macro days(c) %}{% if not c %}<td class="num unknown">—</td>{% elif c.days != '' %}<td class="num{{ ' late' if c.late == 'true' }}">{{ c.days }}</td>{% elif c.late == 'target_passed' %}<td class="num passed">target date passed</td>{% else %}<td class="num unknown">unknown</td>{% endif %}{% endmacro %}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -10,55 +10,120 @@
 <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0" integrity="sha384-GhkD6ks9/zgY1m5EFOUZWz/vMVMUFF/92DL61RZc+B42J8osL+jNufKv68bNHHZ2" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0" integrity="sha384-TqXb8su49m5OnEpKGO8m+VrgHesrUxyP22HgpXi4hnh1Hm43dXroiSYemNf5D8lv" crossorigin="anonymous"></script>
 <style>
-  :root { --ink:#1b1b1b; --muted:#5b5b5b; --line:#d9d9d9; --hair:#ececec; --bg:#ffffff; --accent:#1f4e79;
-          --uncovered:#9b1c1c; --in-progress:#8a5a00; --published:#1f4e79; --harmonised:#1e6b3a; }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-display: swap; src: url("fonts/ibm-plex-sans-latin-400.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-display: swap; src: url("fonts/ibm-plex-sans-latin-500.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-display: swap; src: url("fonts/ibm-plex-sans-latin-600.woff2") format("woff2"); }
+  :root { --ink:#161a1f; --muted:#56606b; --line:#cfd6dd; --hair:#e6eaee; --bg:#ffffff; --band:#f3f5f7; --accent:#1f4e79;
+          --uncovered:#9b1c1c; --in_progress:#8a5a00; --published:#1f4e79; --harmonised:#1e6b3a;
+          --row: {{ row }}px; --head: 40px; }
+  * { box-sizing: border-box; }
   ::selection { background:#d6e4f2; color:var(--ink); }
-  body { margin:0; font:16px/1.55 system-ui, sans-serif; color:var(--ink); background:var(--bg);
-         -webkit-text-size-adjust:100%; }
-  main { max-width: 1000px; margin: 0 auto; padding: 40px 20px 72px; }
-  h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -.015em; margin: 0 0 12px; text-wrap: balance; }
-  h2 { font-size: 1.3rem; line-height: 1.25; letter-spacing: -.01em; margin: 64px 0 8px; padding-top: 20px;
-       border-top: 1px solid var(--ink); text-wrap: balance; }
-  p, li { max-width: 72ch; }
-  p { margin: 0 0 12px; }
-  .meta, footer { color: var(--muted); font-size: .9rem; }
-  code { font-size: .9em; }
-  .table-wrap { overflow-x: auto; margin: 20px 0 12px; }
-  .table-wrap:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  table { border-collapse: collapse; width: 100%; font-size: .93rem; font-variant-numeric: tabular-nums; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--hair); vertical-align: top; }
-  th:first-child, td:first-child { padding-left: 0; } th:last-child, td:last-child { padding-right: 0; }
-  thead th { font-size: .8rem; font-weight: 600; color: var(--muted); vertical-align: bottom;
-             border-bottom: 1px solid var(--ink); }
-  thead th span { display: block; font-weight: 400; }
-  .num { text-align: right; } .nowrap { white-space: nowrap; }
-  #coverage-table { min-width: 620px; } #timeline-table { min-width: 760px; }
-  .status { white-space: nowrap; font-weight: 500; }
-  .status::before { content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .5em;
-                    background: currentColor; }
-  .status-uncovered, .late { color: var(--uncovered); } .status-in_progress, .passed { color: var(--in-progress); }
-  .status-published { color: var(--published); } .status-harmonised { color: var(--harmonised); }
-  .unknown { color: var(--muted); }
-  .chart { width: 100%; margin: 12px 0 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 56px; -webkit-text-size-adjust: 100%; }
+  body { margin:0; font:15px/1.5 "IBM Plex Sans", system-ui, sans-serif; color:var(--ink); background:var(--bg); }
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: .16em; }
   a:hover { text-decoration-thickness: 2px; }
-  ul { padding-left: 1.1em; } li { margin-bottom: 6px; }
-  footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); }
+  a:focus-visible, summary:focus-visible, .table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--ink); color: #fff; font-size: .87rem; }
+  .bar div { max-width: 1240px; margin: 0 auto; padding: 11px 24px; display: flex; gap: 22px; flex-wrap: wrap; align-items: baseline; }
+  .bar b { font-weight: 600; margin-right: auto; }
+  .bar a { color: #fff; text-decoration: none; opacity: .86; } .bar a:hover { opacity: 1; text-decoration: underline; }
+  .bar a:focus-visible { outline-color: #fff; }
+  main { max-width: 1240px; margin: 0 auto; padding: 0 24px 96px; }
+  header { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 48px; padding: 40px 0 28px; }
+  h1 { font-size: 2.1rem; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; margin: 0 0 12px; text-wrap: balance; }
+  header p { margin: 0 0 10px; max-width: 64ch; }
+  dl { margin: 6px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: .87rem; align-content: start;
+       border-top: 2px solid var(--ink); padding-top: 12px; font-variant-numeric: tabular-nums; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  .sum { display: grid; grid-template-columns: repeat({{ coverage|length or 1 }}, minmax(0, 1fr)); gap: 3px; }
+  .sum-cell { display: block; padding: 10px 12px 12px; color: #fff; background: var(--c); text-decoration: none; }
+  .sum-cell:focus-visible { outline-color: var(--ink); }
+  .sum-cell b { display: block; font-weight: 600; } .sum-cell span { font-size: .82rem; }
+  .meta, footer { color: var(--muted); font-size: .87rem; }
+  p.meta { margin: 8px 0 0; max-width: 100ch; } .meta strong { color: var(--ink); }
+  section { padding-top: 72px; }
+  h2 { font-size: 1.3rem; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; margin: 0 0 20px; padding-bottom: 8px;
+       border-bottom: 2px solid var(--ink); }
+  .chart { width: 100%; margin: 0; }
+  .fig { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  /* the chart starts one table header lower, and every row of the side table is exactly one chart step high */
+  .fig .chart { padding-top: var(--head); }
+  table { border-collapse: collapse; width: 100%; font-size: .87rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; }
+  .num { text-align: right; } .nowrap { white-space: nowrap; }
+  .fig th, .fig td { padding: 0 8px; vertical-align: middle; } .fig th:first-child, .fig td:first-child { padding-left: 0; }
+  .fig thead th { height: var(--head); font-size: .78rem; font-weight: 600; vertical-align: bottom; padding-bottom: 6px;
+                  line-height: 1.2; box-shadow: inset 0 -1px var(--ink); }
+  .fig tbody td { height: var(--row); box-shadow: inset 0 -1px var(--hair); }
+  .fig tbody tr:hover, .full tbody tr:hover { background: var(--band); }
+  details { margin-top: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; padding: 11px 0; font-weight: 500; }
+  .table-wrap { overflow-x: auto; padding-bottom: 12px; }
+  .full th, .full td { padding: 7px 10px; border-bottom: 1px solid var(--hair); }
+  .full thead th { background: var(--band); font-size: .78rem; font-weight: 600; vertical-align: bottom; border-bottom: 1px solid var(--line); }
+  .full thead th span { display: block; font-weight: 400; }
+  #coverage-table { min-width: 640px; } #timeline-table { min-width: 760px; }
+  .status { white-space: nowrap; font-weight: 500; }
+  .status::before { content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .5em; background: currentColor; }
+  .status-uncovered, .late { color: var(--uncovered); } .status-in_progress, .passed { color: var(--in_progress); }
+  .status-published { color: var(--published); } .status-harmonised { color: var(--harmonised); }
+  .unknown { color: var(--muted); }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 0 0 14px; padding: 0; font-size: .87rem; color: var(--muted); }
+  .key li { display: flex; align-items: center; gap: 8px; }
+  .mk { flex: none; width: 13px; height: 13px; background: var(--harmonised); border-radius: 50%; }
+  .mk-true { background: var(--uncovered); border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .mk-target_passed { background: var(--in_progress); border-radius: 0; transform: rotate(45deg); width: 10px; height: 10px; margin: 0 2px; }
+  .mk-unknown { background: #6b6b6b; border-radius: 0; }
+  ul.data { padding-left: 1.1em; columns: 2; column-gap: 48px; margin: 0; } ul.data li { margin-bottom: 6px; break-inside: avoid; }
+  code { font-size: .9em; }
+  footer { margin-top: 64px; border-top: 1px solid var(--line); padding-top: 14px; max-width: 90ch; }
+  @media (max-width: 980px) {
+    header { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .sum { grid-template-columns: repeat(4, minmax(0, 1fr)); } ul.data { columns: 1; }
+    .fig { grid-template-columns: minmax(0, 1fr); gap: 20px; } .fig .chart { padding-top: 0; } .fig tbody td { height: 38px; }
+  }
   @media (max-width: 600px) {
-    main { padding: 28px 16px 56px; } h1 { font-size: 1.65rem; } h2 { margin-top: 48px; }
+    main, .bar div { padding-left: 16px; padding-right: 16px; } h1 { font-size: 1.7rem; } .bar a { display: none; }
+    section { padding-top: 52px; } .sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
 </head>
 <body>
+<div class="bar"><div><b>AI Act standards map</b><a href="#cov">Coverage</a><a href="#tl">Work items</a><a href="#data">Data and method</a></div></div>
 <main>
+<header>
+<div>
 <h1>AI Act standards map</h1>
-<p class="meta">Coverage of the high-risk requirements (Articles 8–15 of Regulation (EU) 2024/1689) by the harmonised standards requested from CEN-CENELEC JTC 21. As of {{ today }}. Version {{ version }}.</p>
+<p>Coverage of the high-risk requirements (Articles 8–15 of Regulation (EU) 2024/1689) by the harmonised standards requested from CEN-CENELEC JTC 21.</p>
 <p>The project <strong>describes, it does not interpret</strong>: every row cites a public source by article and paragraph, and judgements are marked as such in a <code>note</code> column. Only public sources are used.</p>
+</div>
+<dl><dt>As of</dt><dd>{{ today }}</dd><dt>Version</dt><dd>{{ version }}</dd><dt>Update</dt><dd>Weekly, on Mondays</dd><dt>Requirements</dt><dd>{{ coverage|length }}</dd><dt>Work items</dt><dd>{{ items|length }}</dd><dt>Licence</dt><dd>Data CC BY 4.0 · Code MIT</dd></dl>
+</header>
 
+<div class="sum">
+{% for r in coverage %}<a class="sum-cell" href="#cov" style="--c: var(--{{ r.status }})"><b>Art. {{ r.article }}</b><span>{{ r.status.replace('_',' ') }}{{ ' *' if r.article in judged }}</span></a>
+{% endfor %}</div>
+<p class="meta">{{ counts.harmonised }} harmonised · {{ counts.published }} published · {{ counts.in_progress }} in progress · {{ counts.uncovered }} uncovered, of {{ coverage|length }} requirements.</p>
+{% for n in coverage_notes %}
+<p class="meta">* <strong>A judgement, not a sourced fact.</strong> Article {{ n.article }} (via {{ n.deliverable_id }}): {{ n.note }}</p>
+{% endfor %}
+
+<section id="cov">
 <h2>Coverage by requirement</h2>
+<div class="fig">
 <div id="coverage" class="chart"></div>
-<div class="table-wrap" tabindex="0" role="region" aria-label="Coverage by requirement, table">
-<table id="coverage-table">
+<table>
+<thead><tr><th scope="col">Article</th><th scope="col" class="num">Work items</th><th scope="col" class="num">Cited in OJEU</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{% for r in coverage %}
+<tr><td>{{ r.article }}{{ ' *' if r.article in judged }}</td><td class="num">{{ r.n_work_items }}</td><td class="num">{{ r.n_harmonised }}</td><td class="status status-{{ r.status }}">{{ r.status.replace('_',' ') }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<details><summary>Full table: coverage by requirement</summary>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Coverage by requirement, full table">
+<table id="coverage-table" class="full">
 <thead><tr><th scope="col">Article</th><th scope="col">Requirement</th><th scope="col" class="num">Deliverables</th><th scope="col" class="num">Work items</th><th scope="col" class="num">At enquiry or later</th><th scope="col" class="num">Published</th><th scope="col" class="num">Cited in OJEU</th><th scope="col">Status</th></tr></thead>
 <tbody>
 {% for r in coverage %}
@@ -67,29 +132,44 @@
 </tbody>
 </table>
 </div>
-{% for n in coverage_notes %}
-<p class="meta">Article {{ n.article }} (via {{ n.deliverable_id }}): {{ n.note }}</p>
-{% endfor %}
+</details>
+</section>
 
+<section id="tl">
 <h2>Work items against the application dates</h2>
+<ul class="key">{% for k in late_key %}<li><span class="mk mk-{{ k.late }}"></span>{{ k.label }}</li>{% endfor %}</ul>
+<div class="fig">
 <div id="timeline" class="chart"></div>
-<div class="table-wrap" tabindex="0" role="region" aria-label="Work items against the application dates, table">
-<table id="timeline-table">
-<thead><tr><th scope="col">Work item</th><th scope="col">Title</th><th scope="col">Deliverable</th><th scope="col">Stage</th><th scope="col">Target publication</th>{% for d in deadlines %}<th scope="col" class="num">Days from target to {{ d.deadline_id }}<span>{{ d.deadline_date }}</span></th>{% endfor %}</tr></thead>
+<table>
+<thead><tr><th scope="col">Work item</th><th scope="col">Target</th>{% if deadlines %}<th scope="col" class="num">Days to {{ deadlines[0].deadline_id }}</th>{% endif %}</tr></thead>
 <tbody>
 {% for t in items %}
-<tr><td class="nowrap">{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td class="nowrap">{{ t.target_pub_date or '—' }}</td>{% for d in deadlines %}{% set c = t.days.get(d.deadline_id) %}{% if not c %}<td class="num unknown">—</td>{% elif c.days != '' %}<td class="num{{ ' late' if c.late == 'true' }}">{{ c.days }}</td>{% elif c.late == 'target_passed' %}<td class="num passed">target date passed</td>{% else %}<td class="num unknown">unknown</td>{% endif %}{% endfor %}</tr>
+<tr><td class="nowrap">{{ t.wi_ref }}</td><td class="nowrap">{{ t.target_pub_date or '—' }}</td>{% if deadlines %}{{ days(t.days.get(deadlines[0].deadline_id)) }}{% endif %}</tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
+<details><summary>Full table: work items against the application dates</summary>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Work items against the application dates, full table">
+<table id="timeline-table" class="full">
+<thead><tr><th scope="col">Work item</th><th scope="col">Title</th><th scope="col">Deliverable</th><th scope="col">Stage</th><th scope="col">Target publication</th>{% for d in deadlines %}<th scope="col" class="num">Days from target to {{ d.deadline_id }}<span>{{ d.deadline_date }}</span></th>{% endfor %}</tr></thead>
+<tbody>
+{% for t in items %}
+<tr><td class="nowrap">{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td class="nowrap">{{ t.target_pub_date or '—' }}</td>{% for d in deadlines %}{{ days(t.days.get(d.deadline_id)) }}{% endfor %}</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</details>
 <p class="meta">Days are counted from the target publication date to the deadline; a negative number means the target falls after the deadline.</p>
 {% for d in deadlines %}
 <p class="meta">{{ d.deadline_id }} ({{ d.deadline_date }}){% if d.scope %}: {{ d.scope }}{% endif %}</p>
 {% endfor %}
+</section>
 
+<section id="data">
 <h2>Data and method</h2>
-<ul>
+<ul class="data">
   <li>Curated tables: {% for name in curated_files %}<a href="data/{{ name }}">{{ name }}</a>{{ ", " if not loop.last }}{% endfor %}</li>
   <li>Derived tables: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>{% if "standards_history.csv" in other_files %}, <a href="data/standards_history.csv">standards_history.csv</a>{% endif %}</li>
 {% if "adoption.csv" in other_files %}
@@ -97,14 +177,15 @@
 {% endif %}
   <li><a href="quality.md">Quality note</a> · <a href="{{ repo_url }}/blob/main/docs/methodology.md">Methodology</a> · <a href="{{ repo_url }}">Repository</a></li>
 </ul>
+</section>
 
 <footer>
-<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC pages; no standard text is reproduced. This is a personal project and does not represent any employer.</p>
+<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC pages; no standard text is reproduced. Typeface: IBM Plex Sans, <a href="fonts/OFL.txt">SIL Open Font License 1.1</a>. This is a personal project and does not represent any employer.</p>
 </footer>
 </main>
 <script>
-  vegaEmbed("#coverage", {{ specs.coverage | tojson }}, {actions: false});
-  vegaEmbed("#timeline", {{ specs.timeline | tojson }}, {actions: false});
+  vegaEmbed("#coverage", {{ specs.coverage | tojson }}, {actions: false, renderer: "svg"});
+  vegaEmbed("#timeline", {{ specs.timeline | tojson }}, {actions: false, renderer: "svg"});
 </script>
 </body>
 </html>

@@ -174,7 +174,7 @@ def _two_deadline_root(tmp_path, curated_ok):
 def test_page_shows_a_work_item_once_with_a_column_per_deadline(tmp_path, curated_ok):
     html = (build(_two_deadline_root(tmp_path, curated_ok), tmp_path / "_site", date(2026, 10, 1))
             / "index.html").read_text()
-    assert html.count(">prEN 1</td>") == 1
+    assert html.count(">prEN 1</td>") == 2  # once beside the chart, once in the full table
     assert "HR_ANNEX3" in html and "HR_ANNEX1" in html
     assert ">-121<" in html and ">244<" in html
 
@@ -197,3 +197,71 @@ def test_timeline_chart_marks_the_as_of_date():
     spec = vega_specs([], [], as_of="2026-10-01")["timeline"]
     marks = [layer for layer in spec["layer"] if layer.get("data") == {"values": [{"as_of": "2026-10-01"}]}]
     assert marks and all(layer["encoding"]["x"]["field"] == "as_of" for layer in marks)
+
+
+def _html(tmp_path, curated_ok, root=None):
+    out = build(root or _root(tmp_path, curated_ok), tmp_path / "_site", date(2026, 10, 1))
+    return out, (out / "index.html").read_text()
+
+
+def test_page_opens_with_one_status_cell_per_requirement(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    assert html.count('class="sum-cell"') == 2
+    assert "<b>Art. 9</b><span>in progress</span>" in html
+    assert "<b>Art. 10</b><span>uncovered</span>" in html
+    assert "0 harmonised · 0 published · 1 in progress · 1 uncovered, of 2 requirements." in html
+
+
+def test_a_judged_mapping_is_flagged_where_the_status_is_first_shown(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    p = root / "data" / "curated" / "request_deliverables.csv"
+    p.write_text(p.read_text().replace(",,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,Outside",
+                                       ",R10,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,Outside"))
+    _, html = _html(tmp_path, curated_ok, root)
+    assert "<b>Art. 10</b><span>uncovered *</span>" in html
+    assert "<b>Art. 9</b><span>in progress</span>" in html  # no mark on a sourced mapping
+    assert "A judgement, not a sourced fact." in html
+
+
+def test_no_judgement_notice_without_a_judged_mapping(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    assert "A judgement, not a sourced fact." not in html
+
+
+def test_each_chart_has_a_short_table_beside_it_and_the_full_table_folded(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    assert html.count('<div class="fig">') == 2
+    assert html.count("<details>") == 2
+    assert "Days to HR_ANNEX3" in html
+
+
+def test_chart_rows_and_side_table_rows_share_one_height(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    specs = vega_specs([], [])
+    assert specs["coverage"]["height"] == {"step": 46} and specs["timeline"]["height"] == {"step": 46}
+    assert "--row: 46px;" in html
+    # nothing above the plot may push the chart rows down: no padding, no legend inside the chart
+    assert specs["timeline"]["padding"]["top"] == 0 and specs["coverage"]["padding"]["top"] == 0
+    points = specs["timeline"]["layer"][1]["encoding"]
+    assert points["color"]["legend"] is None and points["shape"]["legend"] is None
+
+
+def test_timeline_key_is_written_in_the_page(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    for label in ("target before the HR_ANNEX3 deadline", "target after the deadline",
+                  "target date passed, not published"):
+        assert label in html
+
+
+def test_fonts_are_served_from_the_site_itself(tmp_path, curated_ok):
+    out, html = _html(tmp_path, curated_ok)
+    assert (out / "fonts" / "ibm-plex-sans-latin-400.woff2").stat().st_size > 10_000
+    assert (out / "fonts" / "OFL.txt").exists()
+    assert 'url("fonts/ibm-plex-sans-latin-400.woff2")' in html
+    assert "fonts.googleapis.com" not in html and "fonts.gstatic.com" not in html
+
+
+def test_header_states_date_version_and_counts(tmp_path, curated_ok):
+    _, html = _html(tmp_path, curated_ok)
+    assert "<dt>As of</dt><dd>2026-10-01</dd>" in html
+    assert "<dt>Requirements</dt><dd>2</dd>" in html and "<dt>Work items</dt><dd>1</dd>" in html
