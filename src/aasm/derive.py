@@ -55,6 +55,8 @@ def coverage_by_requirement(tables: dict[str, Rows], as_of: date) -> list[dict]:
 def timeline(tables: dict[str, Rows], as_of: date) -> list[dict]:
     out = []
     for s in tables["standards"]:
+        if (_d(s["stage_date"]) or date.max) > as_of:  # stage not reached yet, as in the coverage
+            continue
         target = _d(s["target_pub_date"])
         for dl in tables["deadlines"]:
             dl_date = date.fromisoformat(dl["date"])

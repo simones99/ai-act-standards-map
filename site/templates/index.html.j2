@@ -56,8 +56,10 @@
 <h2>Data and method</h2>
 <ul>
   <li>Curated tables: {% for name in curated_files %}<a href="data/{{ name }}">{{ name }}</a>{{ ", " if not loop.last }}{% endfor %}</li>
-  <li>Derived tables: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>, <a href="data/standards_history.csv">standards_history.csv</a></li>
+  <li>Derived tables: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>{% if "standards_history.csv" in other_files %}, <a href="data/standards_history.csv">standards_history.csv</a>{% endif %}</li>
+{% if "adoption.csv" in other_files %}
   <li>Adoption data: <a href="data/adoption.csv">adoption.csv</a>{% if lineage %} ({{ lineage.rows }} rows, retrieved {{ lineage.retrieved_at }}, SHA-256 {{ lineage.sha256[:12] }}…). Source: Eurostat, <code>isoc_eb_ain2</code>{% endif %}</li>
+{% endif %}
   <li><a href="quality.md">Quality note</a> · <a href="{{ repo_url }}/blob/main/docs/methodology.md">Methodology</a> · <a href="{{ repo_url }}">Repository</a></li>
 </ul>
 
