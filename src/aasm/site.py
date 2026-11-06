@@ -27,7 +27,6 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Coverage status of each requirement",
         "data": {"values": coverage, "format": {"parse": {"article": "number"}}},
-        "mark": "bar",
         "height": {"step": 26},
         "width": "container",
         "encoding": {
@@ -38,6 +37,12 @@ def vega_specs(coverage: list[dict], timeline: list[dict]) -> dict[str, dict]:
             "tooltip": [{"field": "article", "title": "Article"}, {"field": "title"}, {"field": "status"},
                         {"field": "n_work_items", "title": "Work items"}],
         },
+        # The label carries the status colour where the bar has no length (no work item reached)
+        "layer": [
+            {"mark": {"type": "bar"}},
+            {"mark": {"type": "text", "align": "left", "dx": 4},
+             "encoding": {"text": {"field": "status", "type": "nominal"}}},
+        ],
     }
     # One point per work item: colour against the earliest deadline; every deadline is still drawn as a rule.
     first = min(timeline, key=lambda r: r["deadline_date"])["deadline_id"] if timeline else ""
@@ -89,9 +94,11 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
         if src.exists():
             shutil.copy(src, out_dir / "data" / src.name)
             curated_files.append(src.name)
+    other_files = []
     for src in list(derived.glob("*.csv")) + [fetched / "adoption.csv"]:
         if src.exists():
             shutil.copy(src, out_dir / "data" / src.name)
+            other_files.append(src.name)
     quality = root / "docs" / "quality.md"
     if quality.exists():
         shutil.copy(quality, out_dir / "quality.md")
@@ -101,7 +108,7 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
     page = env.get_template("index.html.j2").render(
         today=today.isoformat(), version=__version__, coverage=coverage, coverage_notes=coverage_notes,
         timeline=timeline,
-        curated_files=curated_files, lineage=lineage, repo_url=REPO_URL,
+        curated_files=curated_files, other_files=other_files, lineage=lineage, repo_url=REPO_URL,
         specs=vega_specs(coverage, timeline),
     )
     (out_dir / "index.html").write_text(page, encoding="utf-8")

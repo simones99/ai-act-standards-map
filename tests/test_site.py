@@ -114,3 +114,33 @@ def test_coverage_shows_the_note_of_a_judged_mapping(tmp_path, curated_ok):
 def test_timeline_axis_shows_the_year():
     x = vega_specs([], [])["timeline"]["layer"][1]["encoding"]["x"]
     assert x["axis"]["format"] == "%b %Y"
+
+
+def test_coverage_labels_each_bar_with_its_status_so_a_zero_bar_still_shows_it():
+    cov = [{"req_id": "R08", "article": "8", "title": "Compliance", "status": "uncovered",
+            "n_work_items": "0"}]
+    spec = vega_specs(cov, [])["coverage"]
+    assert [layer["mark"]["type"] for layer in spec["layer"]] == ["bar", "text"]
+    assert spec["layer"][1]["encoding"]["text"]["field"] == "status"
+    # position and colour are shared by both layers, so the label sits at the bar's end in the status colour
+    assert spec["encoding"]["x"]["field"] == "n_work_items" and spec["encoding"]["y"]["field"] == "title"
+    assert spec["encoding"]["color"]["scale"] == {
+        "domain": ["uncovered", "in_progress", "published", "harmonised"],
+        "range": ["#9b1c1c", "#c98a00", "#1f4e79", "#1e6b3a"]}
+    assert "encoding" not in spec["layer"][0]
+
+
+def test_page_links_only_the_data_files_that_were_copied(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)  # no standards_history.csv, no adoption.csv
+    html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
+    assert 'href="data/timeline.csv"' in html
+    assert "standards_history.csv" not in html and "adoption.csv" not in html
+
+
+def test_page_links_history_and_adoption_when_they_exist(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    (root / "data" / "derived" / "standards_history.csv").write_text("wi_ref\n")
+    (root / "data" / "fetched").mkdir()
+    (root / "data" / "fetched" / "adoption.csv").write_text("geo\n")
+    html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
+    assert 'href="data/standards_history.csv"' in html and 'href="data/adoption.csv"' in html

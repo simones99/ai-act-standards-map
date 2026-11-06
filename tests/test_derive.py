@@ -122,3 +122,10 @@ def test_timeline_gives_unknown_for_a_withdrawn_item():
     rows = {r["wi_ref"]: r for r in timeline(tables(s), date(2026, 10, 23))}
     assert rows["W"]["late_vs_deadline"] == "unknown" and rows["W"]["days_target_to_deadline"] == ""
     assert rows["V"]["late_vs_deadline"] == "unknown" and rows["V"]["days_target_to_deadline"] == ""
+
+
+def test_timeline_leaves_out_an_item_whose_stage_is_after_as_of():
+    s = [std("A", "D01", "40", "2026-01-01", target="2026-06-01"),
+         std("B", "D02", "60", "2026-12-01", target="2026-12-01")]  # stage reached after as_of
+    rows = timeline(tables(s), date(2026, 10, 1))
+    assert [r["wi_ref"] for r in rows] == ["A"]
