@@ -17,7 +17,7 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
     req, dlv, std = tables["requirements"], tables["request_deliverables"], tables["standards"]
     covered = sum(1 for c in coverage if c["status"] != "uncovered")
     noted = sum(1 for s in std if s["note"].strip())
-    judged = sum(1 for s in std if "judgement" in s["note"].lower())  # judgements say so in their note
+    judged = sum(1 for s in std if s["link_basis"] == "judged")
     first_seen = len({h["wi_ref"] for h in history})
     retrieved = [date.fromisoformat(s["retrieved_at"]) for s in std if s["retrieved_at"]]
     latest = max(retrieved).isoformat() if retrieved else "none"

@@ -6,7 +6,7 @@ Which high-risk requirements of the EU AI Act are covered by harmonised standard
 
 ## Two rules
 
-1. **The project describes, it does not interpret.** Every normative statement carries the article and, where it exists, the paragraph. Where a link between a requirement and a standard is a judgement, the row says so in its `note` column.
+1. **The project describes, it does not interpret.** Every normative statement carries the article and, where it exists, the paragraph. Where a link between a requirement and a standard is a judgement, the row has `link_basis = judged` and says why in its `note` column.
 2. **Only public sources.** If a fact is not on a public page with a URL, it is not in the dataset. The author works at a national standardisation body; nothing seen in drafts or meetings enters this repository.
 
 ## What is in the box

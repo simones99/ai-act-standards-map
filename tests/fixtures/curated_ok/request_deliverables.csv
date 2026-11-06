@@ -1,3 +1,3 @@
-deliverable_id,title,request_ref,due_date,covers_req_ids,source_url,note
-D01,Risk management system for AI systems,C(2023) 3215,2025-04-30,R09,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,
-D09,Quality management system for providers,C(2023) 3215,2025-04-30,,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,Outside the Articles 8-15 perimeter (Article 17).
+deliverable_id,title,request_ref,due_date,covers_req_ids,source_url,link_basis,note
+D01,Risk management system for AI systems,C(2023) 3215,2025-04-30,R09,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,sourced,
+D09,Quality management system for providers,C(2023) 3215,2025-04-30,,https://ec.europa.eu/growth/tools-databases/enorm/mandate/593_en,sourced,Outside the Articles 8-15 perimeter (Article 17).

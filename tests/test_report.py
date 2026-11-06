@@ -41,17 +41,19 @@ def test_pages_watched_counts_curated_work_items_not_state(curated_ok):
     assert "Pages watched weekly: 1;" in note
 
 
-def _with_notes(tables, notes):
+def _with_links(tables, links):
     base = tables["standards"][0]
-    tables["standards"] = [dict(base, wi_ref=f"prEN {i}", note=n) for i, n in enumerate(notes, 1)]
+    tables["standards"] = [dict(base, wi_ref=f"prEN {i}", link_basis=basis, note=note)
+                           for i, (basis, note) in enumerate(links, 1)]
     return tables
 
 
-def test_quality_note_counts_only_notes_that_record_a_judgement(curated_ok):
-    notes = ["Linked to D01 by judgement.", "Forecasted voting date has passed.", ""]
-    tables = _with_notes(load_all(curated_ok), notes)
+def test_quality_note_counts_judged_links_from_link_basis_not_from_the_wording_of_notes(curated_ok):
+    links = [("judged", "Bias is part of data governance."), ("judged", "Same reading as above."),
+             ("sourced", "No judgement here: the forecast date passed.")]
+    tables = _with_links(load_all(curated_ok), links)
     note = quality_note(tables, None, [], history=[], state={}, today=date(2026, 10, 1))
-    assert "link to a deliverable is a judgement: 1 of 3" in note
+    assert "link to a deliverable is a judgement: 2 of 3" in note
     assert "other caveats: 1" in note
 
 
