@@ -1,14 +1,14 @@
 wi_ref,title,deliverable_id,stage_code,stage_name,stage_date,target_pub_date,deadline_id,deadline_date,days_target_to_deadline,late_vs_deadline
 prEN 18228,AI Risk Management,D01,50,approval,2026-07-30,2026-09-30,HR_ANNEX3,2027-12-02,,target_passed
 prEN 18228,AI Risk Management,D01,50,approval,2026-07-30,2026-09-30,HR_ANNEX1,2028-08-02,,target_passed
-prEN 18284,Artificial Intelligence - Quality and governance of data sets in AI,D02,20,preparatory,2024-09-05,2027-03-18,HR_ANNEX3,2027-12-02,259,false
-prEN 18284,Artificial Intelligence - Quality and governance of data sets in AI,D02,20,preparatory,2024-09-05,2027-03-18,HR_ANNEX1,2028-08-02,503,false
+prEN 18284,Artificial Intelligence - Quality and governance of datasets in AI,D02,20,preparatory,2024-09-05,2027-03-18,HR_ANNEX3,2027-12-02,259,false
+prEN 18284,Artificial Intelligence - Quality and governance of datasets in AI,D02,20,preparatory,2024-09-05,2027-03-18,HR_ANNEX1,2028-08-02,503,false
 prEN 18283,"Artificial Intelligence - Concepts, measures and requirements for managing bias in AI systems",D02,40,enquiry,2026-10-01,2027-03-03,HR_ANNEX3,2027-12-02,274,false
 prEN 18283,"Artificial Intelligence - Concepts, measures and requirements for managing bias in AI systems",D02,40,enquiry,2026-10-01,2027-03-03,HR_ANNEX1,2028-08-02,518,false
 prEN 18229-1,AI trustworthiness framework - Part 1: Logging,D03,50,approval,2026-08-20,2026-11-30,HR_ANNEX3,2027-12-02,367,false
 prEN 18229-1,AI trustworthiness framework - Part 1: Logging,D03,50,approval,2026-08-20,2026-11-30,HR_ANNEX1,2028-08-02,611,false
-prEN 18229-2,AI trustworthiness framework - Part 2: Transparency,D04,20,preparatory,2026-01-06,2027-03-07,HR_ANNEX3,2027-12-02,270,false
-prEN 18229-2,AI trustworthiness framework - Part 2: Transparency,D04,20,preparatory,2026-01-06,2027-03-07,HR_ANNEX1,2028-08-02,514,false
+prEN 18229-2,AI trustworthiness framework - Part 2: Transparency,D04,50,approval,2026-10-29,2027-03-07,HR_ANNEX3,2027-12-02,270,false
+prEN 18229-2,AI trustworthiness framework - Part 2: Transparency,D04,50,approval,2026-10-29,2027-03-07,HR_ANNEX1,2028-08-02,514,false
 prEN 18229-3,AI trustworthiness framework - Part 3: Human oversight,D05,50,approval,2026-10-22,2027-07-01,HR_ANNEX3,2027-12-02,154,false
 prEN 18229-3,AI trustworthiness framework - Part 3: Human oversight,D05,50,approval,2026-10-22,2027-07-01,HR_ANNEX1,2028-08-02,398,false
 prEN 18229-4,AI trustworthiness framework – Part 4: Accuracy,D06,20,preparatory,2026-06-24,2027-07-21,HR_ANNEX3,2027-12-02,134,false
