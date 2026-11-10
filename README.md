@@ -37,7 +37,14 @@ Every Monday the `weekly` workflow runs the same steps, commits new data and pub
 
 ## Status rule
 
-For a requirement at date `as_of`, consider the deliverables that cover it and the work items linked to them whose `stage_date` is on or before `as_of`: `harmonised` if any is cited in the Official Journal by `as_of`; else `published` if any has reached stage 60; else `in_progress` if any work item exists; else `uncovered`. Details in [docs/methodology.md](docs/methodology.md).
+For a requirement at date `as_of`, consider the deliverables that cover it and the work items linked to them whose `stage_date` is on or before `as_of`: `harmonised` if any is cited in the Official Journal by `as_of`; else `published` if any has reached stage 60; else `in_progress` if any work item exists; else `uncovered`.
+
+The rule is applied twice, and `coverage_by_requirement.csv` keeps the two results apart:
+
+- `status`: on public sources alone. Work items reached through a link with `link_basis = judged` are left out.
+- `status_with_judged`: counting those links too.
+
+The site leads with `status` and says the other beside it. Where the two differ, the difference is a judgement of this project, not a fact: Article 11 reads `uncovered` on public sources alone and `harmonised` only through a judged link. Details in [docs/methodology.md](docs/methodology.md).
 
 ## Licences
 

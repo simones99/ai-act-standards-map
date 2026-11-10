@@ -20,11 +20,18 @@ For each requirement `req_id` at a date `as_of`:
 
 1. Take the deliverables whose `covers_req_ids` includes `req_id`.
 2. Take the work items whose `deliverable_id` is one of those and whose `stage_date` is on or before `as_of`. A stage dated after `as_of` has not been reached and is ignored.
-3. Status is `harmonised` if any work item has `ojeu_cited = true` with `ojeu_date` on or before `as_of`; else `published` if any has `stage_code` 60 or 90 (95, withdrawal, does not count); else `in_progress` if any work item exists; else `uncovered`.
+3. A status is `harmonised` if any work item has `ojeu_cited = true` with `ojeu_date` on or before `as_of`; else `published` if any has `stage_code` 60 or 90 (95, withdrawal, does not count); else `in_progress` if any work item exists; else `uncovered`.
+
+Step 3 is applied twice, and `coverage_by_requirement.csv` has one column for each result:
+
+- `status` is the status on public sources alone. It leaves out every work item linked by judgement: one whose deliverable is linked to the requirement with `link_basis = judged` in `request_deliverables.csv`, or whose own link to the deliverable has `link_basis = judged` in `standards.csv`.
+- `status_with_judged` counts those work items too.
+
+`n_judged` is the number of work items linked by judgement. The other counts (`n_work_items`, `n_at_enquiry_or_later`, `n_published`, `n_harmonised`) include them. The site shows `status` first and `status_with_judged` beside it; where the two differ it colours neither. Before version 0.1.2 the file had a single `status` column, which counted judged links: it is what `status_with_judged` holds now.
 
 A requirement with no deliverable (Article 8, the umbrella clause) is `uncovered` with `n_deliverables = 0`, which the site shows as such.
 
-Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. The status of Article 11 therefore follows the quality management work items. When it reads `harmonised`, it means that a standard this project links to Article 11 is cited in the Official Journal. The implementing decision that cites it does not list which requirements it covers, and the presumption of conformity applies only to the extent that the standard covers them (Article 40(1)); this project has no public source on how far it covers Article 11.
+Article 11 (technical documentation) has no deliverable of its own. Annex II of C(2025) 3871 asks CEN and Cenelec to cover it in other harmonised standards, particularly the one on the quality management system, so `request_deliverables.csv` maps Article 11 to D09. Deliverable D09 is written for Article 17, so this link is a judgement (`link_basis = judged`): on public sources alone Article 11 is `uncovered`, and only `status_with_judged` follows the quality management work items. When that column reads `harmonised`, it means that a standard this project links to Article 11 is cited in the Official Journal. The implementing decision that cites it does not list which requirements it covers, and the presumption of conformity applies only to the extent that the standard covers them (Article 40(1)); this project has no public source on how far it covers Article 11.
 
 ## Timeline
 

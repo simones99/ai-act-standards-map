@@ -2,7 +2,43 @@
 
 Dated statements read from the tables in this repository. Each one holds at its date only; the weekly run updates the tables, not this page.
 
+## As of 2026-11-10
+
+Sources: `data/derived/coverage_by_requirement.csv` and `data/derived/timeline.csv` (`aasm derive`, as of 2026-11-10), built from the same curated tables as on 2026-11-06: no row of `data/curated/` has changed since. The watch reached the 11 work item pages on 2026-11-09 and again on 2026-11-10 and found none changed.
+
+From version 0.1.2 the coverage table has two statuses (see `docs/methodology.md`): `status`, on public sources alone, and `status_with_judged`, which also counts the links drawn by this project. The statements below lead with the first.
+
+### Coverage by requirement
+
+| Article | Requirement | Deliverables | Work items | At enquiry or later | Published | Cited in OJEU | On public sources alone | Counting judged links |
+|---|---|---|---|---|---|---|---|---|
+| 8 | Compliance with the requirements | 0 | 0 | 0 | 0 | 0 | uncovered | uncovered |
+| 9 | Risk management system | 1 | 1 | 1 | 0 | 0 | in_progress | in_progress |
+| 10 | Data and data governance | 1 | 2 | 1 | 0 | 0 | in_progress | in_progress |
+| 11 | Technical documentation | 1 | 1 | 1 | 1 | 1 | uncovered | harmonised |
+| 12 | Record-keeping | 1 | 1 | 1 | 0 | 0 | in_progress | in_progress |
+| 13 | Transparency and provision of information to deployers | 1 | 1 | 1 | 0 | 0 | in_progress | in_progress |
+| 14 | Human oversight | 1 | 1 | 1 | 0 | 0 | in_progress | in_progress |
+| 15 | Accuracy, robustness and cybersecurity | 3 | 3 | 1 | 0 | 0 | in_progress | in_progress |
+
+The counts include the work items linked by judgement (`n_judged`): one for Article 10 (prEN 18283) and one for Article 11 (EN 18286:2026).
+
+- On public sources alone, of the 8 requirements in Articles 8–15 (Chapter III, Section 2), 0 read `harmonised`, 6 read `in_progress` and 2 read `uncovered`: Article 8 and Article 11.
+- Counting the links drawn by this project, 1 reads `harmonised` (Article 11), 6 read `in_progress` and 1 reads `uncovered` (Article 8). Article 11 is the only requirement whose two statuses differ.
+- Article 11 is `uncovered` on public sources alone because C(2025) 3871 has no deliverable for it. It reads `harmonised` in the second column because this project links it to D09 (quality management), and EN 18286:2026, which answers D09, is cited in the Official Journal (Commission Implementing Decision (EU) 2026/2274, OJ L, 14.10.2026). The reasons for the link and its limits are as stated for 2026-11-06 below: the Decision does not list which requirements the standard covers, and this project has no public source on how far it covers Article 11.
+- Article 10 reads `in_progress` in both columns. One of its two work items, prEN 18283 (bias), is linked by judgement; the other, prEN 18284 (datasets), is linked by a public source and is under drafting.
+- Article 8 reads `uncovered` by construction: no deliverable in C(2025) 3871 names it. This does not mean a gap in the standards for Articles 9–15.
+
+### Work items against the application dates
+
+- Nothing has moved since 2026-11-06. EN 18286:2026 is the only work item published and the only one cited in the Official Journal.
+- Of the 10 work items not yet published, 7 have a forecasted voting date before the Annex III application date of 2 December 2027; the shortest gap is 134 days (prEN 18229-4 and prEN 18229-5, forecast 2027-07-21). These are forecasts of a vote, not of availability or citation.
+- 3 have a forecasted voting date that has passed without a vote: prEN 18228 (2026-09-30), prEN 18282 (2026-07-15) and prEN 18285 (2026-07-29).
+- The next forecast to fall due is that of prEN 18229-1 (logging), on 2026-11-30.
+
 ## As of 2026-11-06
+
+This section was written before version 0.1.2, when the coverage table had a single `status` column that counted judged links. What it calls the status of a requirement is what the `status_with_judged` column holds now; on public sources alone Article 11 was `uncovered` at this date too.
 
 Sources: `data/derived/coverage_by_requirement.csv` and `data/derived/timeline.csv` (`aasm derive`, as of 2026-11-06), built from `data/curated/standards.csv` (CEN-CENELEC JTC 21 work programme, retrieved 2026-11-06, and work item pages, retrieved 2026-10-23, four of them again on 2026-11-06; OJ citations from the Official Journal, L series), `request_deliverables.csv` (C(2025) 3871) and `deadlines.csv` (Regulation (EU) 2026/1744).
 
