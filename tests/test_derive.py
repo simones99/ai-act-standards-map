@@ -129,3 +129,57 @@ def test_timeline_leaves_out_an_item_whose_stage_is_after_as_of():
          std("B", "D02", "60", "2026-12-01", target="2026-12-01")]  # stage reached after as_of
     rows = timeline(tables(s), date(2026, 10, 1))
     assert [r["wi_ref"] for r in rows] == ["A"]
+
+
+# --- two statuses: on public sources alone, and counting the links drawn by this project ---------
+
+def judged_tables(standards):
+    """D09 is linked to Article 11 by this project's judgement, as in the real data."""
+    t = tables(standards)
+    t["request_deliverables"] = [dict(d, covers_req_ids="R11", link_basis="judged")
+                                 if d["deliverable_id"] == "D09" else d for d in DEL]
+    return t
+
+
+def test_status_rests_on_public_sources_and_leaves_out_a_judged_deliverable():
+    s = [std("Q", "D09", "60", "2026-07-22", cited="true", ojeu="2026-09-14")]
+    r11 = by_req(coverage_by_requirement(judged_tables(s), date(2026, 10, 1)))["R11"]
+    assert r11["status"] == "uncovered"
+    assert r11["status_with_judged"] == "harmonised"
+
+
+def test_n_judged_counts_the_work_items_reached_through_a_judged_link():
+    s = [std("Q", "D09", "60", "2026-07-22", cited="true", ojeu="2026-09-14")]
+    r11 = by_req(coverage_by_requirement(judged_tables(s), date(2026, 10, 1)))["R11"]
+    assert r11["n_judged"] == 1 and r11["n_work_items"] == 1 and r11["n_harmonised"] == 1
+
+
+def test_status_leaves_out_a_work_item_whose_own_link_is_judged():
+    s = [dict(std("B", "D02", "40", "2026-01-01"), link_basis="judged")]
+    r10 = by_req(coverage_by_requirement(tables(s), date(2026, 10, 1)))["R10"]
+    assert (r10["status"], r10["status_with_judged"], r10["n_judged"]) == ("uncovered", "in_progress", 1)
+
+
+def test_a_judged_work_item_beside_a_sourced_one_changes_no_status():
+    s = [std("A", "D02", "20", "2026-01-01"),
+         dict(std("B", "D02", "40", "2026-01-01"), link_basis="judged")]
+    r10 = by_req(coverage_by_requirement(tables(s), date(2026, 10, 1)))["R10"]
+    assert (r10["status"], r10["status_with_judged"]) == ("in_progress", "in_progress")
+    assert r10["n_judged"] == 1 and r10["n_work_items"] == 2
+
+
+def test_without_a_judged_link_the_two_statuses_agree():
+    s = [std("B", "D02", "60", "2026-02-01", cited="true", ojeu="2026-05-01")]
+    r10 = by_req(coverage_by_requirement(tables(s), date(2026, 10, 1)))["R10"]
+    assert (r10["status"], r10["status_with_judged"], r10["n_judged"]) == ("harmonised", "harmonised", 0)
+
+
+def test_coverage_file_has_the_two_status_columns_and_the_judged_count(tmp_path):
+    import csv
+
+    from aasm.derive import write_derived
+
+    write_derived(tables([]), date(2026, 10, 1), tmp_path)
+    with (tmp_path / "coverage_by_requirement.csv").open(newline="", encoding="utf-8") as fh:
+        header = next(csv.reader(fh))
+    assert header[-4:] == ["n_harmonised", "n_judged", "status", "status_with_judged"]
