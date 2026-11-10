@@ -223,6 +223,17 @@ def test_stage_track_does_not_take_a_note_on_a_deliverable_for_a_judgement():
     assert row["judged"] is False and row["steps"][1][0]["judged"] is False
 
 
+def test_stage_track_marks_only_the_work_items_of_the_judged_deliverable_when_a_sourced_one_covers_too():
+    cov = [{"req_id": "R09", "article": "9", "status": "in_progress", "as_of": "2026-10-01"}]
+    dlv = [{"deliverable_id": "D01", "covers_req_ids": "R09", "link_basis": "sourced", "note": ""},
+           {"deliverable_id": "D09", "covers_req_ids": "R09", "link_basis": "judged", "note": "Read so."}]
+    stds = [_std("prEN 1", "40"), _std("EN 9", "60", deliverable_id="D09")]
+    (row,) = stage_track(cov, dlv, stds)
+    marks = {i["wi_ref"]: i["judged"] for step in row["steps"] for i in step}
+    assert marks == {"prEN 1": False, "EN 9": True}  # as `aasm derive` counts them
+    assert row["judged"] is True  # the requirement is still reached through a judged deliverable
+
+
 def test_stage_track_flags_a_requirement_reached_through_a_judged_deliverable():
     cov = [{"req_id": "R11", "article": "11", "status": "harmonised", "as_of": "2026-10-01"}]
     dlv = [{"deliverable_id": "D09", "covers_req_ids": "R11", "link_basis": "judged",
@@ -1024,3 +1035,18 @@ def test_the_page_shows_the_two_statuses_of_the_coverage_file_without_recomputin
     html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
     assert '<b>Art. 10</b> <span class="t">Data and data governance</span> <span>published</span>' in html
     assert "Through a judged link: Art. 10 harmonised." in html
+
+
+def test_a_sourced_work_item_keeps_its_mark_beside_a_judged_deliverable(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    p = root / "data" / "curated" / "request_deliverables.csv"
+    assert JUDGED[0] in p.read_text()
+    p.write_text(p.read_text().replace(JUDGED[0], f",R09,{MANDATE},judged,Outside"))
+    p = root / "data" / "curated" / "standards.csv"
+    p.write_text(p.read_text() + "EN 9,Quality management,D09,60,2026-03-01,2026-03-01,false,,"
+                                 "https://standards.cencenelec.eu/x/9,2026-10-01,sourced,\n")
+    _, html = _html(tmp_path, curated_ok, root)
+    assert '<span class="wi"><a href="https://standards.cencenelec.eu/x/1">prEN 1</a>' in html
+    assert '<span class="wi judged"><a href="https://standards.cencenelec.eu/x/9">EN 9</a>' in html
+    assert ('<b>Art. 9</b> <span class="t">Risk management system</span> <span>in progress</span>'
+            ' <span class="judge">published by a judged link</span>') in html

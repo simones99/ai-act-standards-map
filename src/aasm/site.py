@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup, escape
 
 from aasm import __version__
+from aasm.derive import linked_by_judgement
 from aasm.schema import TABLES
 
 REPO_URL = "https://github.com/simones99/ai-act-standards-map"
@@ -75,20 +76,21 @@ def stage_track(coverage: list[dict], deliverables: list[dict], standards: list[
     """Each coverage row with its work items laid out by step, and what in it rests on a judgement.
 
     Same perimeter as the coverage: a stage dated after as_of has not been reached. A row is judged when
-    the link of a deliverable to it is (link_basis); a work item is judged when that is so, or when its
-    own link to the deliverable is. A note alone never makes a judgement.
+    the link of a deliverable to it is (link_basis). A work item is judged as `aasm derive` counts it:
+    when the link of its own deliverable is, or its own link to that deliverable. A work item under a
+    sourced deliverable stays sourced beside a judged one. A note alone never makes a judgement.
     """
     rows = []
     for r in coverage:
         mine = [d for d in deliverables if r["req_id"] in d.get("covers_req_ids", "").split("|")]
         ids = {d["deliverable_id"] for d in mine}
-        judged = any(d.get("link_basis") == "judged" for d in mine)
+        judged_ids = {d["deliverable_id"] for d in mine if d.get("link_basis") == "judged"}
         steps: list[list[dict]] = [[] for _ in STEPS]
         for s in standards:
             if s["deliverable_id"] in ids and s["stage_date"] <= r["as_of"]:
                 steps[step_of(s, r["as_of"])].append(
-                    {**s, "judged": judged or s.get("link_basis") == "judged"})
-        rows.append({**r, "steps": steps, "judged": judged})
+                    {**s, "judged": linked_by_judgement(s, judged_ids)})
+        rows.append({**r, "steps": steps, "judged": bool(judged_ids)})
     return rows
 
 

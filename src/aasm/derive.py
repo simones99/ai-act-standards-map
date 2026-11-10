@@ -24,6 +24,12 @@ def _split(text: str) -> list[str]:
     return [x.strip() for x in text.split("|") if x.strip()]
 
 
+def linked_by_judgement(standard: dict, judged_deliverables: set[str]) -> bool:
+    """A work item is linked by judgement when the link of its deliverable to the requirement is, or its
+    own link to that deliverable. The site marks the same work items."""
+    return standard["deliverable_id"] in judged_deliverables or standard.get("link_basis") == "judged"
+
+
 def _n_published(items: list[dict]) -> int:
     return sum(1 for s in items if 60 <= int(s["stage_code"]) < 95)
 
@@ -55,9 +61,7 @@ def coverage_by_requirement(tables: dict[str, Rows], as_of: date) -> list[dict]:
         dlv = set(deliverables_by_req.get(r["req_id"], []))
         items = [s for s in reached if s["deliverable_id"] in dlv]
         n_enq = sum(1 for s in items if 40 <= int(s["stage_code"]) < 95)
-        # a work item is linked by judgement when its deliverable's link to the requirement is, or its own
-        judged = [s for s in items
-                  if s["deliverable_id"] in judged_dlv or s.get("link_basis") == "judged"]
+        judged = [s for s in items if linked_by_judgement(s, judged_dlv)]
         sourced = [s for s in items if s not in judged]
         out.append({"req_id": r["req_id"], "article": r["article"], "title": r["title"],
                     "as_of": as_of.isoformat(), "n_deliverables": len(dlv),

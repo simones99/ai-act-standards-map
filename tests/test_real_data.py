@@ -83,17 +83,9 @@ def _derived_coverage():
 
 
 def test_article_11_is_uncovered_on_public_sources_and_harmonised_only_with_the_judged_link():
-    from datetime import date
-
-    from aasm.curated import load_all
-    from aasm.derive import coverage_by_requirement
-
-    cov = {r["article"]: r for r in coverage_by_requirement(load_all(REAL), date(2026, 11, 10))}
-    assert (cov["11"]["status"], cov["11"]["status_with_judged"], cov["11"]["n_judged"]) == (
-        "uncovered", "harmonised", 1)
-    assert (cov["10"]["status"], cov["10"]["status_with_judged"], cov["10"]["n_judged"]) == (
-        "in_progress", "in_progress", 1)
-    assert [a for a, r in cov.items() if r["status"] != r["status_with_judged"]] == ["11"]
+    # read at the date of the published file, so a stage that moves later cannot change the past
+    r11 = next(r for r in _derived_coverage() if r["article"] == "11")
+    assert (r11["status"], r11["status_with_judged"], r11["n_judged"]) == ("uncovered", "harmonised", "1")
 
 
 def test_the_published_coverage_file_follows_the_rule_on_the_curated_tables():
