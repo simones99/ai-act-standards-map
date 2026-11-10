@@ -52,8 +52,9 @@ def test_build_writes_site(tmp_path, curated_ok):
     derived = root / "data" / "derived"
     derived.mkdir(parents=True)
     (derived / "coverage_by_requirement.csv").write_text(
-        "req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,status\n"
-        "R09,9,Risk management system,2026-10-01,1,1,1,0,0,in_progress\n")
+        "req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,"
+        "n_judged,status,status_with_judged\n"
+        "R09,9,Risk management system,2026-10-01,1,1,1,0,0,0,in_progress,in_progress\n")
     (derived / "timeline.csv").write_text(
         "wi_ref,title,deliverable_id,stage_code,stage_name,stage_date,target_pub_date,deadline_id,deadline_date,"
         "days_target_to_deadline,late_vs_deadline\n")

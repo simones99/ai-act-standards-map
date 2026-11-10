@@ -72,3 +72,37 @@ def test_the_one_deliverable_linked_to_a_requirement_by_judgement_is_recorded_as
     deliverables = load_table(REAL, "request_deliverables")
     judged = [d["deliverable_id"] for d in deliverables if d["link_basis"] == "judged"]
     assert judged == ["D09"]
+
+
+def _derived_coverage():
+    import csv
+
+    path = REAL.parent / "derived" / "coverage_by_requirement.csv"
+    with path.open(newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def test_article_11_is_uncovered_on_public_sources_and_harmonised_only_with_the_judged_link():
+    from datetime import date
+
+    from aasm.curated import load_all
+    from aasm.derive import coverage_by_requirement
+
+    cov = {r["article"]: r for r in coverage_by_requirement(load_all(REAL), date(2026, 11, 10))}
+    assert (cov["11"]["status"], cov["11"]["status_with_judged"], cov["11"]["n_judged"]) == (
+        "uncovered", "harmonised", 1)
+    assert (cov["10"]["status"], cov["10"]["status_with_judged"], cov["10"]["n_judged"]) == (
+        "in_progress", "in_progress", 1)
+    assert [a for a, r in cov.items() if r["status"] != r["status_with_judged"]] == ["11"]
+
+
+def test_the_published_coverage_file_follows_the_rule_on_the_curated_tables():
+    from datetime import date
+
+    from aasm.curated import load_all
+    from aasm.derive import COVERAGE_COLUMNS, coverage_by_requirement
+
+    rows = _derived_coverage()
+    assert tuple(rows[0]) == COVERAGE_COLUMNS
+    expected = coverage_by_requirement(load_all(REAL), date.fromisoformat(rows[0]["as_of"]))
+    assert rows == [{k: str(v) for k, v in r.items()} for r in expected]

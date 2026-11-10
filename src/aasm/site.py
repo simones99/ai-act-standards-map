@@ -92,14 +92,6 @@ def stage_track(coverage: list[dict], deliverables: list[dict], standards: list[
     return rows
 
 
-def sourced_status(row: dict) -> str:
-    """The status a track row has on public sources alone: the coverage rule without its judged marks."""
-    reached = [i for i, step in enumerate(row["steps"]) if any(not s["judged"] for s in step)]
-    if not reached:
-        return "uncovered"
-    return "harmonised" if 4 in reached else "published" if 3 in reached else "in_progress"
-
-
 def requirement_when(row: dict, as_of: str, deadline: dict | None) -> dict | None:
     """When a requirement was or may be covered, on public sources alone: the date of its furthest step,
     or for a draft the earliest target and how it falls against the first application date."""
@@ -256,20 +248,21 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
                 i["new"] = week_start < i["stage_date"] <= data_as_of
         r["new"] = any(i["new"] for step in r["steps"] for i in step)
         # the page leads with what public sources support; a judgement is said beside it, never in its place
-        r["shown"] = sourced_status(r)
+        # both statuses come from the coverage file, where `aasm derive` applies the rule once
+        r["shown"], r["with_judged"] = r["status"], r["status_with_judged"]
         # where a judgement would change the status, neither status wears a colour: the cell is neutral
-        r["tone"] = "neutral" if r["status"] != r["shown"] else r["shown"]
+        r["tone"] = "neutral" if r["with_judged"] != r["shown"] else r["shown"]
         r["when"] = requirement_when(r, data_as_of, deadlines[0] if deadlines else None)
         if r["when"] and r["when"]["wi_ref"] in timeline_refs:  # the date leads to its row in the timeline
             r["when"]["anchor"] = anchor(r["when"]["wi_ref"])
         judged_here = any(i["judged"] for step in r["steps"] for i in step)  # a judged work item is drawn
-        said = r["status"].replace("_", " ")
-        r["judge"] = (f"{said} by a judged link" if r["status"] != r["shown"]
+        said = r["with_judged"].replace("_", " ")
+        r["judge"] = (f"{said} by a judged link" if r["with_judged"] != r["shown"]
                       else f"{said} also by a judged link" if judged_here
                       else "a judged link, no work item yet" if r["judged"] else "")
         # a status that rests on a judgement names the standard it rests on, and its date
         counted = {"steps": [[{**i, "judged": False} for i in step] for step in r["steps"]]}
-        w = requirement_when(counted, data_as_of, None) if r["status"] != r["shown"] else None
+        w = requirement_when(counted, data_as_of, None) if r["with_judged"] != r["shown"] else None
         r["judge_when"] = f"{w['wi_ref']}, {w['short']}" if w and w["wi_ref"] else ""
     # A judgement must be explained where it is drawn, not only in the CSV: first the requirements
     # reached through a judged deliverable, then the work items whose own link is judged
@@ -286,7 +279,7 @@ def build(root: Path, out_dir: Path, today: date) -> Path:
     judged_marks = any(i["judged"] for r in track for step in r["steps"] for i in step)
     counts = [{"status": status, "n": sum(1 for r in track if r["shown"] == status)}
               for status in STATUS_ORDER]
-    judged_rows = [r for r in track if r["status"] != r["shown"]]
+    judged_rows = [r for r in track if r["with_judged"] != r["shown"]]
     state_path = data / "watch_state.json"
     watch = watch_summary(json.loads(state_path.read_text()) if state_path.exists() else {}, standards)
     days_old = (today - date.fromisoformat(data_as_of)).days

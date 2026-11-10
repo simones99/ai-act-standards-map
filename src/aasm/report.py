@@ -16,6 +16,7 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
                  state: dict, today: date) -> str:
     req, dlv, std = tables["requirements"], tables["request_deliverables"], tables["standards"]
     covered = sum(1 for c in coverage if c["status"] != "uncovered")
+    with_judged = sum(1 for c in coverage if c["status_with_judged"] != "uncovered")
     noted = sum(1 for s in std if s["note"].strip())
     judged = sum(1 for s in std if s["link_basis"] == "judged")
     first_seen = len({h["wi_ref"] for h in history})
@@ -37,8 +38,9 @@ def quality_note(tables: dict[str, Rows], lineage: dict | None, coverage: list[d
         f"- Perimeter: high-risk AI systems, {PERIMETER} of Regulation (EU) 2024/1689; "
         f"{len(req)} requirements, {len(dlv)} deliverables of standardisation request M/593, "
         f"{len(std)} work items.",
-        f"- {covered} of {len(req)} requirements are covered by at least one work item "
-        f"at {today.isoformat()}.",
+        f"- {covered} of {len(req)} requirements are covered by at least one work item linked by a "
+        f"public source at {today.isoformat()}; {with_judged} of {len(req)} counting the links that "
+        "rest on this project's judgement.",
         "",
         "## Accuracy",
         f"- Work-item rows whose link to a deliverable is a judgement: {judged} of {len(std)}; "
