@@ -6,7 +6,8 @@ from aasm.report import quality_note
 
 def test_quality_note_has_the_ess_sections_and_key_numbers(curated_ok):
     tables = load_all(curated_ok)
-    coverage = [{"req_id": "R09", "status": "in_progress"}, {"req_id": "R10", "status": "uncovered"}]
+    coverage = [{"req_id": "R09", "status": "in_progress", "status_with_judged": "in_progress"},
+                {"req_id": "R10", "status": "uncovered", "status_with_judged": "uncovered"}]
     lineage = {
         "retrieved_at": "2026-10-01T06:00:00Z",
         "rows": 120,
@@ -63,3 +64,11 @@ def test_quality_note_separates_first_observations_from_stage_changes(curated_ok
                {"wi_ref": "prEN 2", "stage_code": "20", "observed_at": "2026-10-01"}]
     note = quality_note(load_all(curated_ok), None, [], history=history, state={}, today=date(2026, 10, 8))
     assert "stage changes observed: 1; first observations: 2" in note
+
+
+def test_quality_note_counts_covered_requirements_on_public_sources_and_with_judged_links(curated_ok):
+    coverage = [{"req_id": "R09", "status": "in_progress", "status_with_judged": "in_progress"},
+                {"req_id": "R10", "status": "uncovered", "status_with_judged": "harmonised"}]
+    note = quality_note(load_all(curated_ok), None, coverage, history=[], state={}, today=date(2026, 10, 1))
+    assert ("1 of 2 requirements are covered by at least one work item linked by a public source "
+            "at 2026-10-01; 2 of 2 counting the links that rest on this project's judgement.") in note

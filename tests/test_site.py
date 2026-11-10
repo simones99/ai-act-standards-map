@@ -9,7 +9,6 @@ from aasm.site import (
     deadline_label,
     report_url,
     requirement_when,
-    sourced_status,
     stage_track,
     step_of,
     timeline_by_item,
@@ -23,9 +22,10 @@ def _root(tmp_path, curated_ok):
     shutil.copytree(curated_ok, root / "data" / "curated")
     (root / "data" / "derived").mkdir(parents=True)
     (root / "data" / "derived" / "coverage_by_requirement.csv").write_text(
-        "req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,status\n"
-        "R09,9,Risk management system,2026-10-01,1,1,1,0,0,in_progress\n"
-        "R10,10,Data and data governance,2026-10-01,1,0,0,0,0,uncovered\n")
+        "req_id,article,title,as_of,n_deliverables,n_work_items,n_at_enquiry_or_later,n_published,n_harmonised,"
+        "n_judged,status,status_with_judged\n"
+        "R09,9,Risk management system,2026-10-01,1,1,1,0,0,0,in_progress,in_progress\n"
+        "R10,10,Data and data governance,2026-10-01,1,0,0,0,0,0,uncovered,uncovered\n")
     (root / "data" / "derived" / "timeline.csv").write_text(
         "wi_ref,title,deliverable_id,stage_code,stage_name,stage_date,target_pub_date,deadline_id,"
         "deadline_date,days_target_to_deadline,late_vs_deadline\n"
@@ -110,8 +110,29 @@ def _two_deadline_root(tmp_path, curated_ok):
     return root
 
 
+def _restatus(root):
+    """Write into the coverage file the statuses `aasm derive` gives for the curated tables as they are now:
+    a test changes a curated table and leaves the other columns of the file as it wrote them."""
+    import csv
+
+    from aasm.curated import load_all
+    from aasm.derive import COVERAGE_COLUMNS, coverage_by_requirement, write_csv
+
+    path = root / "data" / "derived" / "coverage_by_requirement.csv"
+    with path.open(newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    derived = {r["req_id"]: r for r in coverage_by_requirement(load_all(root / "data" / "curated"),
+                                                               date.fromisoformat(rows[0]["as_of"]))}
+    for row in rows:
+        for column in ("n_judged", "status", "status_with_judged"):
+            row[column] = derived[row["req_id"]][column]
+    write_csv(path, rows, COVERAGE_COLUMNS)
+
+
 def _html(tmp_path, curated_ok, root=None):
-    out = build(root or _root(tmp_path, curated_ok), tmp_path / "_site", date(2026, 10, 1))
+    root = root or _root(tmp_path, curated_ok)
+    _restatus(root)
+    out = build(root, tmp_path / "_site", date(2026, 10, 1))
     return out, (out / "index.html").read_text()
 
 
@@ -200,6 +221,17 @@ def test_stage_track_does_not_take_a_note_on_a_deliverable_for_a_judgement():
             "note": "Due date moved."}]
     (row,) = stage_track(cov, dlv, [_std("prEN 1", "40")])
     assert row["judged"] is False and row["steps"][1][0]["judged"] is False
+
+
+def test_stage_track_marks_only_the_work_items_of_the_judged_deliverable_when_a_sourced_one_covers_too():
+    cov = [{"req_id": "R09", "article": "9", "status": "in_progress", "as_of": "2026-10-01"}]
+    dlv = [{"deliverable_id": "D01", "covers_req_ids": "R09", "link_basis": "sourced", "note": ""},
+           {"deliverable_id": "D09", "covers_req_ids": "R09", "link_basis": "judged", "note": "Read so."}]
+    stds = [_std("prEN 1", "40"), _std("EN 9", "60", deliverable_id="D09")]
+    (row,) = stage_track(cov, dlv, stds)
+    marks = {i["wi_ref"]: i["judged"] for step in row["steps"] for i in step}
+    assert marks == {"prEN 1": False, "EN 9": True}  # as `aasm derive` counts them
+    assert row["judged"] is True  # the requirement is still reached through a judged deliverable
 
 
 def test_stage_track_flags_a_requirement_reached_through_a_judged_deliverable():
@@ -344,7 +376,8 @@ def test_a_cited_standard_shows_the_date_of_its_citation(tmp_path, curated_ok):
 def test_a_requirement_with_no_deliverable_says_so_beside_its_status(tmp_path, curated_ok):
     root = _root(tmp_path, curated_ok)
     p = root / "data" / "derived" / "coverage_by_requirement.csv"
-    p.write_text(p.read_text().replace("2026-10-01,1,0,0,0,0,uncovered", "2026-10-01,0,0,0,0,0,uncovered"))
+    p.write_text(p.read_text().replace("2026-10-01,1,0,0,0,0,0,uncovered",
+                                       "2026-10-01,0,0,0,0,0,0,uncovered"))
     _, html = _html(tmp_path, curated_ok, root)
     assert html.count("no deliverable in the request") == 2  # in the strip and in the track
     assert '<b>Art. 9</b> <span class="t">Risk management system</span> <span>in progress</span>' in html
@@ -525,22 +558,6 @@ def test_no_ring_in_the_timeline_without_a_judged_work_item(tmp_path, curated_ok
 
 
 # --- step 2: what public sources support comes first; the judgement is said beside it ------------
-
-def _row(*marks):
-    """A track row with one work item per (step, judged) pair."""
-    steps = [[] for _ in range(5)]
-    for step, judged in marks:
-        steps[step].append({"wi_ref": "x", "judged": judged})
-    return {"steps": steps}
-
-
-def test_sourced_status_reads_the_track_without_the_judged_work_items():
-    assert sourced_status(_row()) == "uncovered"
-    assert sourced_status(_row((4, True))) == "uncovered"
-    assert sourced_status(_row((0, False), (4, True))) == "in_progress"
-    assert sourced_status(_row((3, False))) == "published"
-    assert sourced_status(_row((4, False))) == "harmonised"
-
 
 def test_a_judged_status_is_counted_apart_and_pointed_to_from_its_row(tmp_path, curated_ok):
     _, html = _html(tmp_path, curated_ok, _judged_item_root(tmp_path, curated_ok))
@@ -865,8 +882,8 @@ def _cited_judged_root(tmp_path, curated_ok):
     root = _standard(_root(tmp_path, curated_ok), ",40,2026-03-01,2026-12-01,false,,",
                      ",60,2026-03-01,2026-12-01,true,2026-09-01,")
     cov = root / "data" / "derived" / "coverage_by_requirement.csv"
-    cov.write_text(cov.read_text().replace("2026-10-01,1,1,1,0,0,in_progress",
-                                           "2026-10-01,1,1,1,1,1,harmonised"))
+    cov.write_text(cov.read_text().replace("2026-10-01,1,1,1,0,0,0,in_progress,in_progress",
+                                           "2026-10-01,1,1,1,1,1,0,harmonised,harmonised"))
     return _standard(root, ",sourced,", ",judged,Read as risk management.")
 
 
@@ -1006,3 +1023,30 @@ def test_each_step_is_defined_from_a_public_cen_page_that_it_links(tmp_path, cur
     assert "Formal Vote" in steps and "date of availability" in steps
     assert "for public comment." not in steps.split("<dt>Enquiry</dt>")[1].split("</dd>")[0][:60]
     assert "committee draft" not in steps  # no source read says so
+
+
+# --- the two statuses come from the coverage file: one rule, in derive -----------------------------
+
+def test_the_page_shows_the_two_statuses_of_the_coverage_file_without_recomputing_them(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    p = root / "data" / "derived" / "coverage_by_requirement.csv"
+    assert "0,uncovered,uncovered" in p.read_text()
+    p.write_text(p.read_text().replace("0,uncovered,uncovered", "0,published,harmonised"))
+    html = (build(root, tmp_path / "_site", date(2026, 10, 1)) / "index.html").read_text()
+    assert '<b>Art. 10</b> <span class="t">Data and data governance</span> <span>published</span>' in html
+    assert "Through a judged link: Art. 10 harmonised." in html
+
+
+def test_a_sourced_work_item_keeps_its_mark_beside_a_judged_deliverable(tmp_path, curated_ok):
+    root = _root(tmp_path, curated_ok)
+    p = root / "data" / "curated" / "request_deliverables.csv"
+    assert JUDGED[0] in p.read_text()
+    p.write_text(p.read_text().replace(JUDGED[0], f",R09,{MANDATE},judged,Outside"))
+    p = root / "data" / "curated" / "standards.csv"
+    p.write_text(p.read_text() + "EN 9,Quality management,D09,60,2026-03-01,2026-03-01,false,,"
+                                 "https://standards.cencenelec.eu/x/9,2026-10-01,sourced,\n")
+    _, html = _html(tmp_path, curated_ok, root)
+    assert '<span class="wi"><a href="https://standards.cencenelec.eu/x/1">prEN 1</a>' in html
+    assert '<span class="wi judged"><a href="https://standards.cencenelec.eu/x/9">EN 9</a>' in html
+    assert ('<b>Art. 9</b> <span class="t">Risk management system</span> <span>in progress</span>'
+            ' <span class="judge">published by a judged link</span>') in html

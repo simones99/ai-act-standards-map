@@ -243,7 +243,7 @@
 {% for r in track %}<a class="sum-cell{{ ' judged' if r.judge }}" href="#art-{{ r.article }}" style="--c: var(--{{ r.tone }})"><b>Art. {{ r.article }}</b> <span class="t">{{ r.title }}</span> <span>{{ label(r.shown) }}</span>{% if r.judge %} <span class="judge">{{ r.judge }}</span>{% endif %}{% if r.judge_when %} <span class="when">{{ r.judge_when|dates }}</span>{% endif %}{% if r.n_deliverables == '0' %} <span class="why">no deliverable in the request</span>{% endif %}{% if r.when %} <span class="when{{ ' passed' if r.when.short.endswith('passed') }}">{{ r.when.short|dates }}</span>{% endif %}{% if r.new %} <span class="new">a step reached this week</span>{% endif %}</a>
 {% endfor %}</div>
 <div class="sum-notes">
-<p class="meta">Of {{ track|length }} requirements, by public sources: {% for c in counts %}{{ c.n }} {{ label(c.status) }}{{ ' · ' if not loop.last }}{% endfor %}.{% if judged_rows %} Through a judged link: {% for r in judged_rows %}Art. {{ r.article }} {{ label(r.status) }}{{ ', ' if not loop.last }}{% endfor %}.{% endif %}</p>
+<p class="meta">Of {{ track|length }} requirements, by public sources: {% for c in counts %}{{ c.n }} {{ label(c.status) }}{{ ' · ' if not loop.last }}{% endfor %}.{% if judged_rows %} Through a judged link: {% for r in judged_rows %}Art. {{ r.article }} {{ label(r.with_judged) }}{{ ', ' if not loop.last }}{% endfor %}.{% endif %}</p>
 <p class="meta"><a href="#read">How to read this page</a>: what each status means, and what it does not say.</p>
 {% if coverage_notes %}<p class="meta">A dashed line marks what rests on this project's own judgement and not on a public source; <a href="#judged">the reasons are under the table</a>.</p>{% endif %}
 </div>
