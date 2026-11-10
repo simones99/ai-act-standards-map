@@ -61,3 +61,14 @@ def test_article_11_is_mapped_to_the_quality_management_deliverable():
 def test_en_18286_is_recorded_as_cited():
     en = next(s for s in load_table(REAL, "standards") if s["wi_ref"] == "EN 18286:2026")
     assert (en["ojeu_cited"], en["ojeu_date"]) == ("true", "2026-10-14")
+
+
+def test_the_one_work_item_linked_by_judgement_is_recorded_as_such():
+    judged = [s["wi_ref"] for s in load_table(REAL, "standards") if s["link_basis"] == "judged"]
+    assert judged == ["prEN 18283"]
+
+
+def test_the_one_deliverable_linked_to_a_requirement_by_judgement_is_recorded_as_such():
+    deliverables = load_table(REAL, "request_deliverables")
+    judged = [d["deliverable_id"] for d in deliverables if d["link_basis"] == "judged"]
+    assert judged == ["D09"]

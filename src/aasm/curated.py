@@ -73,6 +73,8 @@ def _check_one(curated_dir: Path, table: Table, errors: list[str]) -> Rows | Non
                 errors.append(f"{fname}:{i}: ojeu_cited is true but ojeu_date is empty")
             if row["ojeu_cited"] == "false" and row["ojeu_date"]:
                 errors.append(f"{fname}:{i}: ojeu_date is set but ojeu_cited is false")
+        if row.get("link_basis") == "judged" and not row["note"].strip():
+            errors.append(f"{fname}:{i}: link_basis is judged but note does not say why")
         for (tname, col), allowed in ENUMS.items():
             if tname == table.name and row[col] not in allowed:
                 errors.append(f"{fname}:{i}: {col} {row[col]!r} not in {sorted(allowed)}")

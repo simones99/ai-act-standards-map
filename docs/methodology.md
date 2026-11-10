@@ -32,7 +32,7 @@ For each work item and each application date in `deadlines.csv`: `days_target_to
 
 ## Work items
 
-`standards.csv` lists the JTC 21 work items whose public page names mandate M/613 (the CEN-CENELEC reference for C(2025) 3871) and says that an OJEU citation is expected under Regulation (EU) 2024/1689. Work items under the same mandate with no citation expected (supporting standards and technical reports) are left out. Where the link to a deliverable is a judgement, the row says so in `note`.
+`standards.csv` lists the JTC 21 work items whose public page names mandate M/613 (the CEN-CENELEC reference for C(2025) 3871) and says that an OJEU citation is expected under Regulation (EU) 2024/1689. Work items under the same mandate with no citation expected (supporting standards and technical reports) are left out. Where the link to a deliverable is a judgement, the row has `link_basis = judged` and says why in `note`; every other row has `link_basis = sourced`. `request_deliverables.csv` has the same column for the link between a deliverable and the requirements it covers.
 
 The JTC 21 work programme shows a status, not a stage code. The status is recorded as: Preliminary 00, Under Drafting 20, Under Enquiry 40, Under Approval 50, Published 60. "Under Drafting" is the work programme's word; the stage list above calls code 20 "preparatory", which is the `stage_name` the derived tables show. `stage_date` is the date of the current stage on the work programme. `target_pub_date` is the forecasted voting date on the work programme (availability usually follows by a few weeks); for a published standard it is the date of availability (DAV).
 
@@ -45,5 +45,5 @@ Work item pages carry a checksum (`cs=`) in their URL. Without it the site answe
 ## Limits
 
 - Stage dates are the dates shown on public pages, which may lag the committee's decisions.
-- The link between a work item and a deliverable is sometimes a judgement; such rows carry a `note`.
+- The link between a work item and a deliverable is sometimes a judgement; such rows have `link_basis = judged` and a `note`. A `note` on its own is a caveat, not a judgement.
 - Application dates are those in force: Regulation (EU) 2024/1689 as amended by Regulation (EU) 2026/1744, which moved the Annex III date from 2 August 2026 to 2 December 2027 and the Annex I date from 2 August 2027 to 2 August 2028. Superseded dates stay in `note`. Proposals to amend them are recorded in `note` until adopted.

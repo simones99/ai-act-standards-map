@@ -10,6 +10,9 @@ STAGE_NAMES = {
 }
 CONFIDENCE = frozenset({"high", "medium", "low"})
 BOOLS = frozenset({"true", "false"})
+# how a row is tied to what it points to (a work item to its deliverable, a deliverable to the
+# requirements it covers): by a public source, or by this project's judgement
+LINK_BASIS = frozenset({"sourced", "judged"})
 
 
 @dataclass(frozen=True)
@@ -39,19 +42,20 @@ TABLES: dict[str, Table] = {
     ),
     "request_deliverables": Table(
         "request_deliverables",
-        ("deliverable_id", "title", "request_ref", "due_date", "covers_req_ids", "source_url", "note"),
+        ("deliverable_id", "title", "request_ref", "due_date", "covers_req_ids", "source_url", "link_basis",
+         "note"),
         "deliverable_id",
-        ("deliverable_id", "title", "request_ref", "source_url"),
+        ("deliverable_id", "title", "request_ref", "source_url", "link_basis"),
         dates=("due_date",),
         refs=(("covers_req_ids", "requirements", "req_id"),),
     ),
     "standards": Table(
         "standards",
         ("wi_ref", "title", "deliverable_id", "stage_code", "stage_date", "target_pub_date",
-         "ojeu_cited", "ojeu_date", "source_url", "retrieved_at", "note"),
+         "ojeu_cited", "ojeu_date", "source_url", "retrieved_at", "link_basis", "note"),
         "wi_ref",
         ("wi_ref", "title", "deliverable_id", "stage_code", "stage_date", "ojeu_cited", "source_url",
-         "retrieved_at"),
+         "retrieved_at", "link_basis"),
         dates=("stage_date", "target_pub_date", "ojeu_date", "retrieved_at"),
         bools=("ojeu_cited",),
         refs=(("deliverable_id", "request_deliverables", "deliverable_id"),),
@@ -67,4 +71,6 @@ TABLES: dict[str, Table] = {
 
 ENUMS: dict[tuple[str, str], frozenset[str]] = {
     ("standards", "stage_code"): STAGE_CODES,
+    ("standards", "link_basis"): LINK_BASIS,
+    ("request_deliverables", "link_basis"): LINK_BASIS,
 }

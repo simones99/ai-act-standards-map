@@ -1,75 +1,485 @@
+{% macro days(c) %}{% if not c %}<td class="num unknown">—</td>{% elif c.days != '' %}<td class="num{{ ' late' if c.late == 'true' }}">{{ c.days }}{% if c.published %}<span class="sub">published</span>{% endif %}</td>{% elif c.late == 'target_passed' %}<td class="num passed"{% if c.ago is not none %} data-sort="{{ -100000 - c.ago }}"{% endif %}>target passed{% if c.ago is not none %}<span class="sub">{{ c.ago }} days ago</span>{% endif %}</td>{% else %}<td class="num unknown">unknown</td>{% endif %}{% endmacro -%}
+{% macro wi(t) %}{% if t.source_url %}<a href="{{ t.source_url }}">{{ t.wi_ref }}</a>{% else %}{{ t.wi_ref }}{% endif %}{% endmacro -%}
+{% macro article(r) %}{% if r.source_url %}<a href="{{ r.source_url }}">Article {{ r.article }}</a>{% else %}Article {{ r.article }}{% endif %}{% endmacro -%}
+{% macro arts(t) %}{% for a in t.articles %}<a href="#art-{{ a }}">Art. {{ a }}</a>{{ ', ' if not loop.last }}{% endfor %}{% endmacro -%}
+{% macro label(status) %}{{ status.replace('_', ' ') }}{% endmacro -%}
+{% macro abbr(t) %}{% set full = {"prEN": "draft European Standard", "EN": "European Standard", "JTC 21": "Joint Technical Committee 21, Artificial Intelligence", "CEN-CENELEC": "European Committee for Standardization and European Committee for Electrotechnical Standardization"} %}<abbr title="{{ full[t] }}">{{ t }}</abbr>{% endmacro -%}
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Act standards map</title>
+<link rel="icon" href="data:,">
 <meta name="description" content="Which AI Act high-risk requirements are covered by harmonised standards, and when.">
-<script src="https://cdn.jsdelivr.net/npm/vega@5.30.0" integrity="sha384-em7CHpJd+SsMugVFf6TY7AKQcLWMcbPhD84hmNK8o6WFDkK+2uHSUQRVQV1/w827" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0" integrity="sha384-GhkD6ks9/zgY1m5EFOUZWz/vMVMUFF/92DL61RZc+B42J8osL+jNufKv68bNHHZ2" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0" integrity="sha384-TqXb8su49m5OnEpKGO8m+VrgHesrUxyP22HgpXi4hnh1Hm43dXroiSYemNf5D8lv" crossorigin="anonymous"></script>
 <style>
-  :root { --ink:#1b1b1b; --muted:#5b5b5b; --line:#d9d9d9; --bg:#ffffff; --accent:#1f4e79; }
-  body { margin:0; font:16px/1.5 system-ui, sans-serif; color:var(--ink); background:var(--bg); }
-  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 1.8rem; margin: 0 0 4px; } h2 { font-size: 1.25rem; margin-top: 40px; }
-  .meta, footer { color: var(--muted); font-size: .9rem; }
-  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .status-uncovered { color:#9b1c1c; } .status-in_progress { color:#8a5a00; }
-  .status-published { color:#1f4e79; } .status-harmonised { color:#1e6b3a; }
-  .chart { width: 100%; margin: 12px 0 0; }
-  a { color: var(--accent); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-display: swap; src: url("fonts/ibm-plex-sans-latin-400.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-display: swap; src: url("fonts/ibm-plex-sans-latin-500.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-display: swap; src: url("fonts/ibm-plex-sans-latin-600.woff2") format("woff2"); }
+  /* published is not the link blue: a status must never look like something to click.
+     The timeline has its own colour, outside the four of the statuses, so a status colour never means two
+     things; its two late states are told apart by shape (triangle, diamond) and by name. */
+  :root { --ink:#161a1f; --muted:#56606b; --line:#cfd6dd; --hair:#e6eaee; --bg:#ffffff; --band:#f3f5f7; --accent:#1f4e79;
+          --uncovered:#9b1c1c; --in_progress:#8a5a00; --published:#5a3d8a; --harmonised:#1e6b3a;
+          --neutral:var(--muted); --warn:#a0167a; --late:var(--warn); --passed:var(--warn);
+          --bar: 43px; --row: {{ row }}px; --head: {{ plot.head }}px; --rule-line: 20px; }
+  * { box-sizing: border-box; }
+  ::selection { background:#d6e4f2; color:var(--ink); }
+  html { scroll-padding-top: 56px; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  body { margin:0; font:15px/1.5 "IBM Plex Sans", system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: .16em; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible, summary:focus-visible, .table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .skip { position: absolute; left: 8px; top: -60px; z-index: 6; padding: 8px 12px; background: var(--bg); color: var(--ink); }
+  .skip:focus { top: 8px; }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--ink); color: #fff; font-size: .87rem; }
+  .bar div { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; gap: 22px; flex-wrap: wrap; align-items: baseline; }
+  .bar b { font-weight: 600; margin-right: auto; }
+  .bar a { color: #fff; text-decoration: none; opacity: .86; padding: 11px 0; } .bar a:hover { opacity: 1; text-decoration: underline; }
+  .bar a:focus-visible { outline-color: #fff; outline-offset: -4px; }
+  .bar a[aria-current] { opacity: 1; box-shadow: inset 0 -2px #fff; }
+  main, footer { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  .top { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); column-gap: 48px; padding-top: 40px;
+         grid-template-areas: "lede facts" "sum sum" "notes notes"; }
+  .lede { grid-area: lede; padding-bottom: 28px; } .facts { grid-area: facts; } .sum { grid-area: sum; } .sum-notes { grid-area: notes; }
+  h1 { font-size: 2.1rem; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; margin: 0 0 12px; text-wrap: balance; }
+  .lede p { margin: 0 0 10px; max-width: 64ch; }
+  dl { margin: 0; font-size: .87rem; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-content: start; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  p, dd, li { text-wrap: pretty; }
+  dl.facts { margin-top: 6px; margin-bottom: 28px; border-top: 2px solid var(--ink); padding-top: 12px; font-variant-numeric: tabular-nums; }
+  .defs { margin: 0 0 16px; max-width: 70ch; } .defs dt { color: var(--ink); font-weight: 500; }
+  /* the strip is an index, not a verdict: a neutral ground, the status as a word and a rule of its colour */
+  .sum { display: grid; grid-template-columns: repeat({{ track|length or 1 }}, minmax(0, 1fr)); gap: 3px; }
+  .sum-cell { display: block; padding: 8px 12px 12px; color: var(--ink); background: var(--band); border-top: 4px solid var(--c); text-decoration: none; }
+  .sum-cell:hover { background: var(--hair); } .sum-cell:focus-visible { outline-color: var(--ink); }
+  .sum-cell b { display: block; font-weight: 600; }
+  .sum-cell .t { display: block; margin: 0 0 6px; font-size: .78rem; font-weight: 400; line-height: 1.3; color: var(--muted); }
+  .sum-cell .when { margin-top: 4px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sum-cell .when.passed, .when.passed { color: var(--passed); }
+  .sum-cell > span { display: block; font-size: .82rem; font-weight: 500; line-height: 1.3; color: var(--c); }
+  .sum-cell .why { font-weight: 400; color: var(--muted); }
+  /* a judgement is said in ink beside the sourced status, behind the dashed square of the track */
+  .judge { color: var(--ink); font-weight: 400; } .sum-cell .judge { color: var(--ink); font-weight: 400; }
+  .judge::before { content: ""; display: inline-block; width: .55em; height: .55em; margin-right: .45em; border: 1.5px dashed var(--ink); vertical-align: .05em; }
+  .meta, footer { color: var(--muted); font-size: .87rem; }
+  p.meta { margin: 8px 0 0; max-width: 60ch; } .meta strong { color: var(--ink); }
+  section { padding-top: 72px; }
+  h2 { font-size: 1.3rem; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; margin: 0 0 20px; padding-bottom: 8px;
+       border-bottom: 2px solid var(--ink); }
+  h2 + p.meta { margin: -8px 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: .87rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; vertical-align: top; }
+  :is(td, tbody th) a { display: inline-block; padding: 4px 0; }
+  .num { text-align: right; } .nowrap { white-space: nowrap; }
+  .sub { display: block; color: var(--muted); font-size: .78rem; font-weight: 400; line-height: 1.3; white-space: normal; }
+  .table-wrap { position: relative; overflow-x: auto; padding-bottom: 12px; }
+  .scroll-hint { display: none; }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 0 0 14px; padding: 0; font-size: .87rem; color: var(--muted); }
+  .key li { display: flex; align-items: center; gap: 8px; }
+
+  /* stage track: one row per requirement, one column per step, one mark per work item.
+     A solid mark is linked by a public source; a dashed one by this project. Hollow is kept for forecasts, below. */
+  .track { min-width: 820px; }
+  .track th, .track td { padding: 7px 10px; border-bottom: 1px solid var(--hair); }
+  .track thead th { font-size: .78rem; font-weight: 600; vertical-align: bottom; line-height: 1.3; padding-bottom: 9px; border-bottom: 1px solid var(--ink); }
+  .track tbody th { font-weight: 500; width: 20%; }
+  .track tbody tr { scroll-margin-top: 114px; } .fig tbody tr { scroll-margin-top: 96px; }
+  .track .step { width: 11.5%; border-left: 1px solid var(--hair); }
+  .track .status .judge a, .track .status .when a { display: inline; padding: 0; } .status .d { display: block; }
+  .wk, .wi::before { content: ""; flex: none; width: 11px; height: 11px; background: var(--ink); }
+  .wk-judged, .wi.judged::before { width: 12px; height: 12px; background: var(--bg); border: 1.5px dashed var(--ink); }
+  .wk-none, .step.none::before { content: ""; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+  .step.none::before { margin: 12px 0 0 3px; }
+  .wi { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; white-space: nowrap; }
+  .wi .sub { grid-column: 2; margin-top: -4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .track tbody tr:hover, .fig tbody tr:hover, .full tbody tr:hover { background: var(--band); }
+  /* a row landed on is outlined in ink: a tint alone is too faint to find */
+  tr:target > * { box-shadow: inset 0 2px var(--ink), inset 0 -2px var(--ink); }
+  tr:target > :first-child { box-shadow: inset 2px 0 var(--ink), inset 0 2px var(--ink), inset 0 -2px var(--ink); }
+  tr:target > :last-child { box-shadow: inset -2px 0 var(--ink), inset 0 2px var(--ink), inset 0 -2px var(--ink); }
+
+  .status { white-space: nowrap; font-weight: 500; } .status a { color: inherit; }
+  .track .status { padding-top: 11px; }
+  .status::before { content: ""; display: inline-block; width: .6em; height: .6em; margin-right: .5em; background: currentColor; }
+  .status-uncovered { color: var(--uncovered); } .status-in_progress { color: var(--in_progress); }
+  .status-published { color: var(--published); } .status-harmonised { color: var(--harmonised); }
+  .status-neutral { color: var(--neutral); }
+  .late { color: var(--late); } .passed { color: var(--passed); } .unknown { color: var(--muted); }
+
+  /* timeline: plot and table side by side, row i of one beside row i of the other */
+  .fig { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: start; }
+  /* the table beside the plot keeps one line per cell, so its rows stay as tall as the plot's */
+  .fig td { white-space: nowrap; }
+  .fig th, .fig td { padding: 0 8px; vertical-align: middle; } .fig th:first-child, .fig td:first-child { padding-left: 0; }
+  .fig thead th { height: var(--head); font-size: .78rem; font-weight: 600; vertical-align: bottom; padding-bottom: 6px;
+                  line-height: 1.3; box-shadow: inset 0 -1px var(--ink); }
+  .fig tbody td { height: var(--row); box-shadow: inset 0 -1px var(--hair); line-height: 1.3; }
+  .fig td a { padding: 1px 0; } .fig .sub { white-space: nowrap; }
+  .plot-main { position: relative; padding-top: var(--head); box-shadow: inset 0 -1px var(--line); }
+  .plot-row { position: relative; height: var(--row); box-shadow: inset 0 -1px var(--hair); }
+  .plot-row .none { position: absolute; left: 3%; top: 50%; translate: 0 -50%; font-size: .78rem; color: var(--muted); }
+  .plot-row .ref { display: none; }
+  .rule { position: absolute; bottom: 0; width: 0; border-left: 1px dashed var(--ink); }
+  .rule-as_of { border-left: 1px solid var(--muted); }
+  .rule-name { position: absolute; padding: 0 6px; font-size: .78rem; font-weight: 500; line-height: var(--rule-line); white-space: nowrap;
+               font-variant-numeric: tabular-nums; background: var(--bg); }
+  .rule-name.as_of { color: var(--muted); font-weight: 400; } .rule-name.left { translate: -100% 0; }
+  .tick { position: absolute; top: var(--head); bottom: 0; width: 0; border-left: 1px solid var(--hair); }
+  /* the axis names every quarter only where the plot is wide enough for them */
+  .plot { container-type: inline-size; }
+  @container (max-width: 640px) { .plot-axis span.minor { display: none; } }
+  .plot-axis { position: relative; height: 30px; font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .plot-axis span { position: absolute; top: 7px; translate: -50% 0; white-space: nowrap; }
+  /* a published standard is solid, a target is hollow: a forecast is not yet a fact */
+  .mk { flex: none; width: 13px; height: 13px; }
+  .mk-published { background: var(--ink); border-radius: 50%; }
+  .mk-false { background: var(--bg); border: 2px solid var(--ink); border-radius: 50%; }
+  .mk-true { background: var(--late); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .mk-target_passed { background: var(--passed); rotate: 45deg; width: 11px; height: 11px; margin: 0 1px; }
+  .plot-row.on { background: var(--band); box-shadow: inset 0 0 0 2px var(--ink); }
+  .pt { position: absolute; top: 50%; translate: -50% -50%; display: flex; }
+  /* the dashed ring is the timeline's form of the dashed mark: a link this project drew */
+  .pt.judged, .ring { display: flex; padding: 3px; border: 1.5px dashed var(--ink); border-radius: 50%; }
+
+  details { margin-top: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; padding: 11px 0; font-weight: 500; }
+  /* a folded note: one line in view, the reason a click away */
+  details.note { margin: 0; border: 0; font-size: .87rem; color: var(--muted); max-width: 72ch; }
+  details.note summary { padding: 4px 0; font-weight: 400; color: var(--ink); }
+  details.note p { margin: 0 0 8px 1.1em; } .notes { margin-top: 12px; } .notes > p.meta { margin: 0 0 4px; }
+  .key.spaced { margin-top: 16px; } p.meta.cite { margin-top: 16px; }
+  abbr { white-space: nowrap; text-decoration: underline dotted 1px; text-underline-offset: .18em; cursor: help; }
+  .full th, .full td { padding: 5px 10px; border-bottom: 1px solid var(--hair); }
+  .full thead th { background: var(--band); font-size: .78rem; font-weight: 600; vertical-align: bottom; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  .full thead th span { display: block; font-weight: 400; }
+  .full td:not(:has(a)) { padding-top: 9px; padding-bottom: 9px; }
+  #coverage-table { min-width: 640px; } #timeline-table { min-width: 760px; }
+  /* the first column stays in view while a wide table scrolls sideways */
+  .full :is(th, td):first-child, .track :is(th, td):first-child { position: sticky; left: 0; background: var(--bg); }
+  .full thead th:first-child, :is(.full, .track) tbody tr:hover > :first-child, .track tbody tr:target > :first-child { background: var(--band); }
+  .faq { max-width: 36em; } .faq p { margin: 0 0 8px; }
+  h2, h3 { text-wrap: balance; }
+  h3 { font-size: 1rem; line-height: 1.3; font-weight: 600; margin: 28px 0 6px; } .faq h3:first-child { margin-top: 0; }
+  .faq .defs { margin: 8px 0; }
+  .stale { margin: 20px 0 0; padding: 10px 14px; border: 1px solid var(--warn); background: var(--band); max-width: 72ch; }
+  .stale[hidden] { display: none; } .stale span { font-weight: 600; }
+  .new { color: var(--ink); font-weight: 600; } .sum-cell .new { margin-top: 4px; font-size: .78rem; }
+  .perma { font-size: .75rem; font-weight: 400; color: var(--muted); padding: 4px 2px; text-decoration: none; } .perma:hover { text-decoration: underline; }
+  p.meta.download { margin: 6px 0 0; }
+  button.sort { font: inherit; color: inherit; text-align: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  button.sort:hover { text-decoration: underline; } button.sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* the direction of a sorted column: a small triangle drawn in the column's own ink */
+  th[aria-sort] button.sort::after { content: ""; display: inline-block; margin-left: 5px; border: 4px solid transparent; vertical-align: 1px; }
+  th[aria-sort="ascending"] button.sort::after { border-bottom-color: currentColor; border-top-width: 0; }
+  th[aria-sort="descending"] button.sort::after { border-top-color: currentColor; border-bottom-width: 0; }
+  ul.data { list-style: none; padding: 0; margin: 0; max-width: 66ch; } ul.data li { margin-bottom: 10px; }
+  ul.data a { display: inline-block; padding: 3px 0; } ul.data strong { font-weight: 500; }
+  code { font-size: .9em; overflow-wrap: anywhere; }
+  footer { margin-top: 64px; padding-bottom: 96px; }
+  footer p { margin: 0; border-top: 1px solid var(--line); padding-top: 14px; max-width: 60ch; }
+  @media (max-width: 980px) {
+    .top { grid-template-columns: minmax(0, 1fr); grid-template-areas: "lede" "facts" "sum" "notes"; }
+    .lede { padding-bottom: 16px; }
+    .sum { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .fig { grid-template-columns: minmax(0, 1fr); gap: 20px; } .fig thead th { height: auto; padding-top: 6px; } .fig tbody td { height: 48px; }
+    /* stacked, the table is no longer beside the plot: each row names its work item */
+    .plot-row .ref { display: block; position: absolute; left: 0; top: 3px; padding-right: 4px; font-size: .75rem; line-height: 1.2; color: var(--muted); background: var(--bg); }
+    .plot-row .pt { top: 64%; }
+  }
+  /* where the track fits it does not scroll sideways, so its step headers can stay under the bar */
+  @media (min-width: 869px) {
+    .track-wrap { overflow: visible; }
+    /* a link reached by the keyboard scrolls clear of the bar and the step headers */
+    .track :is(a, button) { scroll-margin-top: 70px; }
+    .track thead th { position: sticky; top: var(--bar); z-index: 2; background: var(--bg); border-bottom: 0; box-shadow: inset 0 -1px var(--ink); }
+  }
+  /* the track needs 820px: below that, and only then, it scrolls sideways and says so */
+  @media (max-width: 868px) {
+    p.scroll-hint { display: block; margin: 0 0 8px; } p.scroll-hint[hidden] { display: none; }
+  }
+  @media (max-width: 600px) {
+    html { scroll-padding-top: 48px; }
+    main, footer, .bar div { padding-left: 16px; padding-right: 16px; } h1 { font-size: 1.7rem; }
+    /* on a phone the bar keeps only the section links, on one line that scrolls sideways if it must */
+    .bar b { display: none; } .bar div { flex-wrap: nowrap; gap: 18px; overflow-x: auto; scrollbar-width: none; }
+    .bar a { padding: 9px 0; white-space: nowrap; } .bar .long { display: none; }
+    section { padding-top: 52px; } .sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* on a phone the strip comes right after the lede; the facts follow it */
+    .top { grid-template-areas: "lede" "sum" "notes" "facts"; padding-top: 28px; } dl.facts { margin: 20px 0 0; }
+    /* a narrow first column, so the last steps are not hidden behind it when the table is scrolled to its end */
+    .track { min-width: 680px; } .track tbody th { width: auto; min-width: 112px; }
+    .track .step { width: auto; } .track .status { white-space: normal; min-width: 150px; }
+    .track :is(th, td):first-child { padding-left: 0; }
+  }
+  @media print {
+    .bar, .skip, p.scroll-hint, .back { display: none; } main, footer { padding: 0; max-width: none; } section { padding-top: 28px; }
+    a { color: inherit; text-decoration: none; }
+    /* the sources that fit on paper are printed in full; work-item pages have long addresses and stay in the CSV */
+    :is(.defs, ul.data) a[href^="http"]::after { content: " <" attr(href) ">"; font-weight: 400; }
+    details::details-content { content-visibility: visible; display: block; } summary { list-style: none; }
+    .table-wrap { overflow: visible; } table { min-width: 0 !important; }
+    .sum-cell, .mk, .wk, .wi::before, .status::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .fig, tr { break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
-<main>
+<a class="skip" href="#main">Skip to content</a>
+<nav class="bar" aria-label="Sections"><div><b>AI Act standards map</b><a href="#cov">Coverage</a><a href="#tl">Work items</a><a href="#read">How to read</a><a href="#data">Data<span class="long"> and method</span></a></div></nav>
+<main id="main">
+<p class="stale" id="stale" data-as-of="{{ data_as_of }}"{{ ' hidden' if not stale }}>These data are as of {{ data_as_of }}, <span>{{ days_old }}</span> days ago: the weekly update may not have run, so a step reached since then is not shown yet. <a href="{{ repo_url }}/actions">See the runs in the repository</a>.</p>
+<div class="top">
+<div class="lede">
 <h1>AI Act standards map</h1>
-<p class="meta">Coverage of the high-risk requirements (Articles 8–15 of Regulation (EU) 2024/1689) by the harmonised standards requested from CEN-CENELEC JTC 21. As of {{ today }}. Version {{ version }}.</p>
-<p>The project <strong>describes, it does not interpret</strong>: every row cites a public source by article and paragraph, and judgements are marked as such in a <code>note</code> column. Only public sources are used.</p>
+<p>Coverage of the high-risk requirements (Articles 8–15 of Regulation (EU) 2024/1689) by the harmonised standards requested from {{ abbr("CEN-CENELEC") }} and drafted in their Joint Technical Committee 21 on artificial intelligence ({{ abbr("JTC 21") }}).</p>
+<p>The project <strong>describes, it does not interpret</strong>: every row links to a public source, and a link that rests on this project's own judgement is marked as such wherever it is shown. Only public sources are used.</p>
+</div>
+<dl class="facts"><dt>Data as of</dt><dd>{{ data_as_of }}</dd>{% if checked %}<dt>Sources checked</dt><dd>{{ checked }}</dd>{% endif %}<dt>Version</dt><dd>{{ version }}, built {{ today }}</dd><dt>Update</dt><dd>Weekly, on Mondays</dd>{% if watch %}<dt>Pages watched</dt><dd>{% if watch.missing %}{{ watch.n }}; not reached on {{ watch.latest }}: {{ watch.missing|join(', ') }}{% else %}{{ watch.n }}, all reached on {{ watch.latest }}{% endif %}</dd>{% endif %}</dl>
 
+<div class="sum" id="summary">
+{% for r in track %}<a class="sum-cell{{ ' judged' if r.judge }}" href="#art-{{ r.article }}" style="--c: var(--{{ r.tone }})"><b>Art. {{ r.article }}</b> <span class="t">{{ r.title }}</span> <span>{{ label(r.shown) }}</span>{% if r.judge %} <span class="judge">{{ r.judge }}</span>{% endif %}{% if r.judge_when %} <span class="when">{{ r.judge_when|dates }}</span>{% endif %}{% if r.n_deliverables == '0' %} <span class="why">no deliverable in the request</span>{% endif %}{% if r.when %} <span class="when{{ ' passed' if r.when.short.endswith('passed') }}">{{ r.when.short|dates }}</span>{% endif %}{% if r.new %} <span class="new">a step reached this week</span>{% endif %}</a>
+{% endfor %}</div>
+<div class="sum-notes">
+<p class="meta">Of {{ track|length }} requirements, by public sources: {% for c in counts %}{{ c.n }} {{ label(c.status) }}{{ ' · ' if not loop.last }}{% endfor %}.{% if judged_rows %} Through a judged link: {% for r in judged_rows %}Art. {{ r.article }} {{ label(r.status) }}{{ ', ' if not loop.last }}{% endfor %}.{% endif %}</p>
+<p class="meta"><a href="#read">How to read this page</a>: what each status means, and what it does not say.</p>
+{% if coverage_notes %}<p class="meta">A dashed line marks what rests on this project's own judgement and not on a public source; <a href="#judged">the reasons are under the table</a>.</p>{% endif %}
+</div>
+</div>
+
+<section id="cov">
 <h2>Coverage by requirement</h2>
-<div id="coverage" class="chart"></div>
-<table>
-<thead><tr><th>Article</th><th>Requirement</th><th>Deliverables</th><th>Work items</th><th>At enquiry or later</th><th>Published</th><th>Cited in OJEU</th><th>Status</th></tr></thead>
+<dl class="defs status-key">
+<dt>work item</dt><dd>A standard in the CEN-CENELEC JTC 21 work programme; its reference starts with {{ abbr("prEN") }} while it is a draft and with {{ abbr("EN") }} once published.</dd>
+<dt>deliverable</dt><dd>One of the standards the Commission asked for in standardisation request M/593; several work items can answer one.</dd>
+<dt>uncovered</dt><dd>No work item is linked to the requirement by a public source.</dd>
+<dt>in progress</dt><dd>At least one work item is linked to it; none is published.</dd>
+<dt>published</dt><dd>A linked standard is published, and not yet cited in the Official Journal of the EU.</dd>
+<dt>harmonised</dt><dd>The reference of a linked standard is cited in the Official Journal of the EU: the last step of the track, Cited in the Official Journal.</dd>
+{% if coverage_notes %}<dt>by a judged link</dt><dd>The status the requirement has once the links drawn by this project are counted; the status before it rests on public sources alone. Where the two differ, the status is drawn in grey, so that neither reads as the verdict.</dd>{% endif %}
+</dl>
+<p class="meta">Each mark is a work item, placed at the furthest step it has reached on {{ data_as_of|dates }}.</p>
+<ul class="key"><li><span class="wk"></span>work item linked by a public source</li>{% if judged_marks %}<li><span class="wk wk-judged"></span>work item linked by this project's judgement</li>{% endif %}<li><span class="wk wk-none"></span>step not reached</li></ul>
+<p class="meta scroll-hint">The table is wider than the screen: scroll it sideways to see all five steps and the status.</p>
+<div class="table-wrap track-wrap" tabindex="0" role="region" aria-label="Step reached by each work item, by requirement">
+<table class="track">
+<caption class="vh">Step reached by each work item, by requirement, as of {{ data_as_of }}</caption>
+<thead><tr><th scope="col">Requirement</th><th scope="col">Status</th>{% for s, n in steps %}<th scope="col">{{ s }} <span class="sub">{{ n }}</span></th>{% endfor %}</tr></thead>
 <tbody>
-{% for r in coverage %}
-<tr><td>{{ r.article }}</td><td>{{ r.title }}</td><td>{{ r.n_deliverables }}</td><td>{{ r.n_work_items }}</td><td>{{ r.n_at_enquiry_or_later }}</td><td>{{ r.n_published }}</td><td>{{ r.n_harmonised }}</td><td class="status-{{ r.status }}">{{ r.status.replace('_',' ') }}</td></tr>
+{% for r in track %}
+<tr id="art-{{ r.article }}"><th scope="row">{{ article(r) }} <a class="perma" href="#art-{{ r.article }}" aria-label="Link to the Article {{ r.article }} row">link</a><span class="sub">{{ r.title }}</span></th><td class="status status-{{ r.tone }}">{{ label(r.shown) }}{% if r.judge %}<span class="sub judge"><a href="#judged">{{ r.judge }}</a>{% if r.judge_when %}<span class="d">{{ r.judge_when|dates }}</span>{% endif %}</span>{% endif %}{% if r.n_deliverables == '0' %}<span class="sub">no deliverable in the request</span>{% endif %}{% if r.when %}<span class="sub when">{% if r.when.anchor %}<a href="#{{ r.when.anchor }}">{{ r.when.short|dates }}</a>{% else %}{{ r.when.short|dates }}{% endif %}{% if r.when.detail %}<span class="d">{{ r.when.detail|dates }}</span>{% endif %}</span>{% endif %}</td>{% for step in r.steps %}{% set cited = loop.last %}<td class="step{{ ' none' if not step }}">{% for s in step %}<span class="wi{{ ' judged' if s.judged }}">{{ wi(s) }}{% if s.judged %}<span class="vh"> (judged link)</span>{% endif %}{% if cited and s.ojeu_date %}<span class="sub">cited {{ s.ojeu_date }}</span>{% endif %}{% if s.new %}<span class="sub new">new this week</span>{% endif %}</span>{% else %}<span class="vh">not reached</span>{% endfor %}</td>{% endfor %}</tr>
 {% endfor %}
 </tbody>
 </table>
-{% for n in coverage_notes %}
-<p class="meta">Article {{ n.article }} (via {{ n.deliverable_id }}): {{ n.note }}</p>
+</div>
+{% if "coverage_by_requirement.csv" in other_files %}<p class="meta download">This table as CSV: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a></p>{% endif %}
+{% if coverage_notes %}<div class="notes" id="judged">
+<p class="meta"><strong>A judgement, not a sourced fact.</strong> These links are drawn by this project, not by a public source; each one says why.</p>
+{% for n in coverage_notes %}<details class="note"><summary>{{ n.subject }}</summary><p>{{ n.note }}</p></details>
+{% endfor %}</div>{% endif %}
+<details><summary>Full table: coverage by requirement</summary>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Coverage by requirement, full table">
+<table id="coverage-table" class="full">
+<caption class="vh">Coverage by requirement, counts of deliverables and work items</caption>
+<thead><tr><th scope="col" aria-sort="ascending">Article</th><th scope="col">Requirement</th><th scope="col" class="num">Deliverables</th><th scope="col" class="num">Work items</th><th scope="col" class="num">At enquiry or later</th><th scope="col" class="num">Published</th><th scope="col" class="num">Cited in the Official Journal</th><th scope="col">Status</th><th scope="col" data-nosort>Correction</th></tr></thead>
+<tbody>
+{% for r in track %}
+<tr><td class="nowrap">{{ article(r) }}</td><td>{{ r.title }}{% if r.judge %}<span class="sub">counts include a judged link</span>{% endif %}</td><td class="num">{{ r.n_deliverables }}</td><td class="num">{{ r.n_work_items }}</td><td class="num">{{ r.n_at_enquiry_or_later }}</td><td class="num">{{ r.n_published }}</td><td class="num">{{ r.n_harmonised }}</td><td class="status status-{{ r.tone }}" data-sort="{{ track_order[r.shown] }}">{{ label(r.shown) }}{% if r.judge %}<span class="sub judge">{{ r.judge }}</span>{% endif %}</td><td><a href="{{ r.report }}">Report</a></td></tr>
 {% endfor %}
+</tbody>
+</table>
+</div>
+<p class="meta">A deliverable is one of the standards the Commission asked for in standardisation request M/593; one deliverable can be answered by several work items.</p>
+</details>
+<p class="meta"><a class="back" href="#summary">Back to the summary</a></p>
+</section>
 
+<section id="tl">
 <h2>Work items against the application dates</h2>
-<div id="timeline" class="chart"></div>
+<p class="meta">Each mark is a work item at its target publication date, earliest first; the dashed lines are the dates from which the requirements apply.</p>
+{% if deadlines %}<dl class="defs">
+{% for d in deadlines %}<dt>{% if d.source_url %}<a href="{{ d.source_url }}">{{ d.label }}</a>{% else %}{{ d.label }}{% endif %} ({{ d.deadline_date }})</dt><dd>{{ d.scope }}</dd>
+{% endfor %}</dl>
+{% if deadlines|selectattr("note")|list %}<details class="note"><summary>How these dates were set</summary>{% for d in deadlines if d.note %}<p><b>{{ d.label[:1]|upper ~ d.label[1:] }}.</b> {{ d.note }}</p>{% endfor %}</details>{% endif %}{% endif %}
+<ul class="key spaced">{% for k in late_key %}<li><span class="mk mk-{{ k.state }}"></span>{{ k.label }}</li>{% endfor %}{% if judged_items %}<li><span class="ring"><span class="mk mk-false"></span></span>dashed ring: linked by this project's judgement</li>{% endif %}</ul>
+<div class="fig">
+<div class="plot" role="img" aria-label="Target publication date of each work item against the application dates. A table with each work item gives the same data.">
+<div class="plot-main">
+{% for t in plot.ticks %}<i class="tick" style="left: {{ t.x }}%"></i>{% endfor %}
+{% for r in plot.rules %}<i class="rule rule-{{ r.kind }}" style="left: {{ r.x }}%; top: calc({{ loop.index0 }} * var(--rule-line) + 3px)"></i><span class="rule-name {{ r.kind }} {{ r.side }}" style="left: {{ r.x }}%; top: calc({{ loop.index0 }} * var(--rule-line))">{{ r.label }} {{ r.date }}</span>{% endfor %}
+{% for t in items %}{% set m = plot.marks[loop.index0] %}<div class="plot-row"><span class="ref">{{ t.wi_ref }}</span>{% if m.x is not none %}<span class="pt{{ ' judged' if t.judged }}" style="left: {{ m.x }}%" title="{{ t.wi_ref }}: {{ t.step }}, target {{ t.target_pub_date }}{{ ', judged link' if t.judged }}"><span class="mk mk-{{ m.state }}"></span></span>{% else %}<span class="none">no target date</span>{% endif %}</div>
+{% endfor %}
+</div>
+<div class="plot-axis">{% for t in plot.ticks %}<span{% if t.minor %} class="minor"{% endif %} style="left: {{ t.x }}%">{{ t.label }}</span>{% endfor %}</div>
+</div>
 <table>
-<thead><tr><th>Work item</th><th>Title</th><th>Deliverable</th><th>Stage</th><th>Target publication</th><th>Deadline</th><th>Days to deadline</th></tr></thead>
+<caption class="vh">Article, step and days from target to the first application date, for each work item</caption>
+<thead><tr><th scope="col">Work item</th><th scope="col">Step</th>{% if deadlines %}<th scope="col" class="num">Days from target to the<br>{{ deadlines[0].label }} <span class="sub">{{ deadlines[0].deadline_date }}</span></th>{% endif %}</tr></thead>
 <tbody>
-{% for t in timeline %}
-<tr><td>{{ t.wi_ref }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}</td><td>{{ t.stage_code }} {{ t.stage_name }}</td><td>{{ t.target_pub_date or '—' }}</td><td>{{ t.deadline_id }} ({{ t.deadline_date }})</td><td>{{ t.days_target_to_deadline if t.days_target_to_deadline != '' else ('target date passed' if t.late_vs_deadline == 'target_passed' else 'unknown') }}</td></tr>
+{% for t in items %}
+<tr id="{{ t.anchor }}"><td class="nowrap">{{ wi(t) }}{% if t.articles %}<span class="sub">{{ arts(t) }}{{ ' (judged link)' if t.judged }}</span>{% elif not t.in_perimeter %}<span class="sub">no Article 8–15 requirement</span>{% endif %}</td><td>{{ t.step_short }}</td>{% if deadlines %}{{ days(t.days.get(deadlines[0].deadline_id)) }}{% endif %}</tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
+{% if "timeline.csv" in other_files %}<p class="meta download">This table as CSV: <a href="data/timeline.csv">timeline.csv</a></p>{% endif %}
+<details><summary>Full table: work items against the application dates</summary>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Work items against the application dates, full table">
+<table id="timeline-table" class="full">
+<caption class="vh">Work items with title, deliverable, step, target publication and days to each application date</caption>
+<thead><tr><th scope="col">Work item</th><th scope="col">Title</th><th scope="col">Deliverable</th><th scope="col">Step</th><th scope="col" aria-sort="ascending">Target publication</th>{% for d in deadlines %}<th scope="col" class="num">Days from target to the {{ d.label }} <span>{{ d.deadline_date }}</span></th>{% endfor %}<th scope="col" data-nosort>Correction</th></tr></thead>
+<tbody>
+{% for t in items %}
+<tr><td class="nowrap">{{ wi(t) }}</td><td>{{ t.title }}</td><td>{{ t.deliverable_id }}{% if t.articles %}<span class="sub">{{ arts(t) }}{{ ' (judged link)' if t.judged }}</span>{% elif not t.in_perimeter %}<span class="sub">no Article 8–15 requirement</span>{% endif %}</td><td class="nowrap">{{ t.step }}<span class="sub">stage {{ t.stage_code }} {{ t.stage_name }}</span></td><td class="nowrap">{{ t.target_pub_date or '—' }}</td>{% for d in deadlines %}{{ days(t.days.get(d.deadline_id)) }}{% endfor %}<td><a href="{{ t.report }}">Report</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</details>
+<p class="meta">Days are counted from the target publication date to the application date, not from today; a negative number means the target falls after it. The target of a draft is the forecast voting date on the work programme, a forecast and not a commitment.</p>
+<p class="meta"><a class="back" href="#summary">Back to the summary</a></p>
+</section>
 
+{% set method = repo_url ~ "/blob/main/docs/methodology.md" %}
+<section id="read">
+<h2>How to read this page</h2>
+<div class="faq">
+<h3>Does an article have a harmonised standard?</h3>
+<p>Find it in <a href="#summary">the strip at the top</a>. Only <em>harmonised</em> means that the reference of a standard linked to the article is cited in the Official Journal of the EU. <a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj">Article 40(1)</a> of the Regulation says that systems in conformity with such standards “shall be presumed to be in conformity with the requirements set out in Section 2 of this Chapter […] to the extent that those standards cover those requirements or obligations”. This page does not say how far a standard covers a requirement. <a href="{{ method }}#coverage-status">How the status is set</a>.</p>
+<h3>What do the five steps mean?</h3>
+{% set boss = "https://boss.cen.eu/developingdeliverables/pages/en/pages/" %}
+<dl class="defs">
+<dt>Drafting</dt><dd>Stages 00 to 30 on the work programme: the work before the draft is submitted to Enquiry. <a href="{{ boss }}entoenq/">CEN: from drafting to Enquiry</a>.</dd>
+<dt>Enquiry</dt><dd>Stage 40: the draft goes to the national standards bodies; the national members vote and comment within 12 weeks, and confirm that the draft was made available for public comment. <a href="{{ boss }}enq/">CEN: Enquiry</a>.</dd>
+<dt>Approval</dt><dd>Stage 50: the final draft (FprEN) is put to the Formal Vote, over 4 weeks. <a href="{{ boss }}fv/">CEN: Formal Vote</a>.</dd>
+<dt>Published</dt><dd>Stage 60, or 90 when under review: the definitive text of the approved EN is distributed, from its date of availability. <a href="{{ boss }}finalization/">CEN: finalization</a>.</dd>
+<dt>Cited in the Official Journal</dt><dd>The reference of the standard is published in the Official Journal of the EU (see Article 40(1), quoted above); the requirement is then <em>harmonised</em>.</dd>
+</dl>
+<p><a href="{{ method }}#stage-codes">Stage codes in the methodology</a>.</p>
+{% if coverage_notes or judged_items %}<h3>What does a dashed mark mean?</h3>
+<p>A solid mark is a link stated by a public source. A dashed square, a dashed ring or the words <em>by a judged link</em> mark a link drawn by this project; each one says why{% if coverage_notes %}, <a href="#judged">under the coverage table</a>{% endif %}, and in the <code>note</code> column of its CSV.</p>{% endif %}
+<h3>Why can a target date be wrong?</h3>
+<p>The target of a draft is the forecast voting date on the work programme: a forecast, not a commitment. A target that has passed without publication is shown as passed, with the days since. <a href="{{ method }}#timeline">How the timeline is built</a>.</p>
+<h3>How fresh is this, and what if something is wrong?</h3>
+<p>The data are as of {{ data_as_of }}. Every Monday the public pages are checked again; a page that changed opens a review issue, and the tables are updated by a person. If something on this page is wrong, <a href="#data">report a correction</a>. <a href="{{ method }}#weekly-watch">The weekly watch</a>.</p>
+</div>
+<p class="meta"><a class="back" href="#summary">Back to the summary</a></p>
+</section>
+
+<section id="data">
 <h2>Data and method</h2>
-<ul>
-  <li>Curated tables: {% for name in curated_files %}<a href="data/{{ name }}">{{ name }}</a>{{ ", " if not loop.last }}{% endfor %}</li>
-  <li>Derived tables: <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>{% if "standards_history.csv" in other_files %}, <a href="data/standards_history.csv">standards_history.csv</a>{% endif %}</li>
+<ul class="data">
+  <li><strong>Corrections.</strong> <a href="{{ report_page }}">Report a correction</a>: it opens a review issue in the repository, and every row of the full tables has its own link that names the row and its source.</li>
+  <li><strong>Method.</strong> <a href="{{ repo_url }}/blob/main/docs/methodology.md">Methodology</a> · <a href="{{ repo_url }}/blob/main/docs/quality.md">Quality note</a> · <a href="{{ repo_url }}">Repository</a></li>
+  <li><strong>Curated tables.</strong> {% for name in curated_files %}<a href="data/{{ name }}">{{ name }}</a>{{ ", " if not loop.last }}{% endfor %}</li>
+  <li><strong>Derived tables.</strong> <a href="data/coverage_by_requirement.csv">coverage_by_requirement.csv</a>, <a href="data/timeline.csv">timeline.csv</a>{% if "standards_history.csv" in other_files %}, <a href="data/standards_history.csv">standards_history.csv</a>{% endif %}</li>
 {% if "adoption.csv" in other_files %}
-  <li>Adoption data: <a href="data/adoption.csv">adoption.csv</a>{% if lineage %} ({{ lineage.rows }} rows, retrieved {{ lineage.retrieved_at }}, SHA-256 {{ lineage.sha256[:12] }}…). Source: Eurostat, <code>isoc_eb_ain2</code>{% endif %}</li>
+  <li><strong>Adoption data.</strong> <a href="data/adoption.csv">adoption.csv</a>, fetched for a later version and not analysed on this page.{% if lineage %} {{ lineage.rows }} rows, retrieved {{ lineage.retrieved_at }}, from Eurostat table <code>isoc_eb_ain2</code>. SHA-256 <code>{{ lineage.sha256 }}</code>{% endif %}</li>
 {% endif %}
-  <li><a href="quality.md">Quality note</a> · <a href="{{ repo_url }}/blob/main/docs/methodology.md">Methodology</a> · <a href="{{ repo_url }}">Repository</a></li>
 </ul>
-
-<footer>
-<p>Data: CC BY 4.0. Code: MIT. Eurostat data: Source: Eurostat. Standards metadata are facts from public CEN-CENELEC pages; no standard text is reproduced. This is a personal project and does not represent any employer.</p>
-</footer>
+<p class="meta cite">Cite as: {{ author }} ({{ year }}). AI Act standards map, version {{ version }}, data as of {{ data_as_of }}. <a href="{{ repo_url }}">{{ repo_url }}</a></p>
+</section>
 </main>
+<footer>
+<p>Data: CC BY 4.0. Code: MIT. Adoption data, Source: Eurostat. Standards metadata are facts from public CEN-CENELEC pages; no standard text is reproduced. Typeface: IBM Plex Sans, <a href="fonts/OFL.txt">SIL Open Font License 1.1</a>. This is a personal project and does not represent any employer. <a class="back" href="#main">Back to top</a></p>
+</footer>
+<p class="vh" id="live" aria-live="polite"></p>
 <script>
-  vegaEmbed("#coverage", {{ specs.coverage | tojson }}, {actions: false});
-  vegaEmbed("#timeline", {{ specs.timeline | tojson }}, {actions: false});
+/* Adds to a page that is complete without it: the section in view is marked in the bar. */
+(() => {
+  const links = [...document.querySelectorAll('.bar a[href^="#"]')];
+  const sections = links.map(a => document.querySelector(a.hash)).filter(Boolean);
+  if (!("IntersectionObserver" in window) || !sections.length) return;
+  const seen = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    links.forEach(a => a.hash === "#" + e.target.id ? a.setAttribute("aria-current", "location") : a.removeAttribute("aria-current"));
+  }), { rootMargin: "-40% 0px -55% 0px" });
+  sections.forEach(s => seen.observe(s));
+  seen.observe(document.querySelector(".top"));  // back at the lede, no section is current
+})();
+/* The notice of stale data is also judged on the day the page is read, not only on the day it was built. */
+(() => {
+  const note = document.getElementById("stale");
+  const asOf = note && Date.parse(note.dataset.asOf);
+  if (!asOf) return;
+  const days = Math.floor((Date.now() - asOf) / 864e5);
+  if (days > {{ stale_after }}) { note.querySelector("span").textContent = days; note.hidden = false; }
+})();
+/* The link of a row copies its address, and says so; without a clipboard it is an ordinary link. */
+if (navigator.clipboard) document.querySelectorAll("a.perma").forEach(a => {
+  a.textContent = "copy link";
+  a.setAttribute("aria-label", "Copy link to the " + a.getAttribute("aria-label").replace(/^Link to the /, ""));
+});
+document.addEventListener("click", e => {
+  const a = e.target.closest("a.perma");
+  if (!a || !navigator.clipboard) return;
+  e.preventDefault();
+  navigator.clipboard.writeText(a.href).then(() => {
+    document.getElementById("live").textContent = "Link to the row copied";
+    a.textContent = "copied";
+    setTimeout(() => { a.textContent = "copy link"; document.getElementById("live").textContent = ""; }, 1600);
+  }, () => { location.hash = a.hash; });
+});
+/* The full tables sort by any column: numbers as numbers, text in reading order, blanks last. */
+document.querySelectorAll("table.full").forEach(table => {
+  const heads = [...table.tHead.rows[0].cells];
+  heads.forEach((th, col) => {
+    if (th.hasAttribute("data-nosort")) return;
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "sort";
+    button.append(...th.childNodes); th.append(button);
+    button.addEventListener("click", () => {
+      const up = th.getAttribute("aria-sort") !== "ascending";
+      heads.forEach(h => h.removeAttribute("aria-sort"));
+      th.setAttribute("aria-sort", up ? "ascending" : "descending");
+      const cells = [...table.tBodies[0].rows].map(r => r.cells[col]);
+      const num = th.classList.contains("num") || cells.some(c => c.dataset.sort !== undefined);
+      const key = row => { const c = row.cells[col], v = (c.dataset.sort ?? c.textContent).trim(); return num ? parseFloat(v) : v; };
+      const rows = [...table.tBodies[0].rows].sort((a, b) => {
+        const x = key(a), y = key(b);
+        const blank = v => v === "" || v === "—" || Number.isNaN(v);
+        if (blank(x) || blank(y)) return blank(x) - blank(y);
+        return (num ? x - y : x.localeCompare(y, "en", { numeric: true })) * (up ? 1 : -1);
+      });
+      table.tBodies[0].append(...rows);
+    });
+  });
+});
+/* Beside its table, each plot row takes the height of its table row, so a mark never sits beside another work
+   item; the plot row of the work item landed on is outlined like its table row. */
+(() => {
+  const fig = document.querySelector(".fig");
+  if (!fig) return;
+  const plot = fig.querySelector(".plot"), main = fig.querySelector(".plot-main"), table = fig.querySelector("table");
+  const rows = [...fig.querySelectorAll(".plot-row")], trs = [...table.tBodies[0].rows];
+  const align = () => {
+    const beside = Math.abs(table.getBoundingClientRect().top - plot.getBoundingClientRect().top) < 2;
+    rows.forEach((r, i) => { r.style.height = beside && trs[i] ? trs[i].offsetHeight + "px" : ""; });
+    beside ? main.style.setProperty("--head", table.tHead.offsetHeight + "px") : main.style.removeProperty("--head");
+  };
+  const mark = () => {
+    const i = trs.findIndex(tr => "#" + tr.id === location.hash);
+    rows.forEach((r, j) => r.classList.toggle("on", j === i));
+  };
+  align(); mark();
+  addEventListener("resize", align); addEventListener("hashchange", mark);
+  if (document.fonts) document.fonts.ready.then(align);
+})();
+/* A table that fits needs no tab stop and no hint; one that is wider than the screen keeps both. */
+(() => {
+  const fit = () => document.querySelectorAll(".table-wrap").forEach(w => {
+    if (!w.clientWidth) return;  // inside a closed disclosure: measured when it opens
+    const scrolls = w.scrollWidth > w.clientWidth + 1;
+    scrolls ? w.setAttribute("tabindex", "0") : w.removeAttribute("tabindex");
+    const hint = w.previousElementSibling;
+    if (hint && hint.classList.contains("scroll-hint")) hint.hidden = !scrolls;
+  });
+  fit();
+  addEventListener("resize", fit);
+  document.querySelectorAll("details").forEach(d => d.addEventListener("toggle", fit));
+})();
 </script>
 </body>
 </html>

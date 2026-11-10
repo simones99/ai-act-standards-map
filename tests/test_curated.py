@@ -125,3 +125,37 @@ def test_ojeu_date_requires_ojeu_cited(curated_copy):
     _rewrite(p, p.read_text().replace(",false,,https://standards", ",false,2027-01-01,https://standards"))
     errors = check_tables(curated_copy)
     assert any("standards.csv:2" in e and "ojeu_date" in e and "ojeu_cited" in e for e in errors)
+
+
+def test_link_basis_must_be_sourced_or_judged(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text().replace(",sourced,", ",guess,"))
+    errors = check_tables(curated_copy)
+    assert any("standards.csv:2" in e and "link_basis" in e and "guess" in e for e in errors)
+
+
+def test_a_judged_link_must_say_why_in_its_note(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text().replace(",sourced,", ",judged,"))
+    errors = check_tables(curated_copy)
+    assert any("standards.csv:2" in e and "link_basis is judged" in e and "note" in e for e in errors)
+
+
+def test_a_judged_link_with_a_note_is_valid(curated_copy):
+    p = curated_copy / "standards.csv"
+    _rewrite(p, p.read_text().replace(",sourced,", ",judged,Linked to D01 by judgement."))
+    assert check_tables(curated_copy) == []
+
+
+def test_a_deliverable_states_the_basis_of_its_link_to_the_requirements(curated_copy):
+    p = curated_copy / "request_deliverables.csv"
+    _rewrite(p, p.read_text().replace(",sourced,\n", ",guess,\n"))
+    errors = check_tables(curated_copy)
+    assert any("request_deliverables.csv:2" in e and "link_basis" in e and "guess" in e for e in errors)
+
+
+def test_a_judged_deliverable_must_say_why_in_its_note(curated_copy):
+    p = curated_copy / "request_deliverables.csv"
+    _rewrite(p, p.read_text().replace(",sourced,\n", ",judged,\n"))
+    errors = check_tables(curated_copy)
+    assert any("request_deliverables.csv:2" in e and "link_basis is judged" in e for e in errors)
