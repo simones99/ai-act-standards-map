@@ -1,11 +1,11 @@
 {
   "EN 18286:2026": {
-    "checked_at": "2026-11-10",
+    "checked_at": "2026-11-16",
     "sha256": "0603f6b5c6c053c7f94ee1cc7fff5842c6d1cb89fd13ec153b97a1fb2ba1fa9b",
     "url": "https://standards.cencenelec.eu/ords/f?p=205:110:::::FSP_PROJECT:80556&cs=14AE42ED2F03B261D02113245F6A65F24"
   },
   "prEN 18228": {
-    "checked_at": "2026-11-10",
+    "checked_at": "2026-11-16",
     "sha256": "cb40d3483b51da242c264370713e71ae244af50940c43f2c55e688eeef1523c2",
     "url": "https://standards.cencenelec.eu/ords/f?p=205:110:::::FSP_PROJECT,FSP_LANG_ID:79438,25&cs=126AEABA70EBCF2433A6A5472A8FD6F84"
   },
@@ -50,7 +50,7 @@
     "url": "https://standards.cencenelec.eu/ords/f?p=205:110:::::FSP_PROJECT,FSP_LANG_ID:80364,25&cs=16B97AF755CF36534FF119CB9782A0D1C"
   },
   "prEN 18285": {
-    "checked_at": "2026-11-10",
+    "checked_at": "2026-11-16",
     "sha256": "b00bb1f3a549503673730edfa1b37eabcd9931cf2341df84e7a8f76841e8a05f",
     "url": "https://standards.cencenelec.eu/ords/f?p=205:110:::::FSP_PROJECT,FSP_LANG_ID:80555,25&cs=1A16BF3B3D24FE1F037E7D0FB1A7A014A"
   }
